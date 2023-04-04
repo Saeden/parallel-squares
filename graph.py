@@ -46,6 +46,7 @@ def reconfig_graph(start: World, target: Configuration) -> Graph:
             p = pos[v]
             block = start.configuration.get_block_p(p=p)
             for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE'),((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
+            #for nb_p, nb_i in [((0,1),'N'), ((1,0),'E'),((0,-1),'S'),((-1,0),'W')]:
                 nb = block.neighbours[nb_i]
                 if nb:
                     e = g.add_edge(vertices[str(block.p)], vertices[str(nb.p)])
@@ -53,9 +54,13 @@ def reconfig_graph(start: World, target: Configuration) -> Graph:
                         edge_connected[e] = True
                     else:
                         edge_connected[e] = False
-                # else:
-                #     if f"({block.p[0]+nb_p[0]}, {block.p[1]+nb_p[1]})" in vertices:
-                #         e = g.add_edge(vertices[str(block.p)], vertices[f"({block.p[0]+nb_p[0]}, {block.p[1]+nb_p[1]})"])
+                elif f"({block.p[0]+nb_p[0]}, {block.p[1]+nb_p[1]})" in vertices:
+                    e = g.add_edge(vertices[str(block.p)], vertices[f"({block.p[0]+nb_p[0]}, {block.p[1]+nb_p[1]})"])
+                    if nb_i in ['N', 'E', 'S', 'W']:
+                        edge_connected[e] = True
+                    else:
+                        edge_connected[e] = False
+
 
 
     loose_blocks = g.new_vertex_property("bool")
@@ -74,19 +79,29 @@ def reconfig_graph(start: World, target: Configuration) -> Graph:
                 crit_blocks[nb_nb[0]] = True
                 v_color[nb_nb[0]] = "red"
 
-    legal_move = g.new_edge_property("bool")
-    e_color = g.new_edge_property("string")
+    legal_moves = g.new_edge_property("bool")
+
     for v in g.iter_vertices():
         if crit_blocks[v]:
             continue
         
-        orth_nb = get_orth_in_neighbours(g, v, edge_connected)
-        if len(orth_nb) == 4:
-            continue
+        for in_nb in g.get_in_neighbors(v):
+            for nbs_out_nb in get_orth_out_neighbours(g, in_nb, edge_connected): # v's neighbour's out neighbour
+                e = g.edge(v, nbs_out_nb)
+                if perimeter[nbs_out_nb] and e:
+                    legal_moves[e] = True
+                    debug = ""
+    
+    e_color = g.new_edge_property("string")
+    for e in g.edges():
+        if legal_moves[e]:
+            e_color[e] = "green"
+        else:
+            e_color[e] = "grey"
 
 
-        in_nb = g.get_in_neighbors(v)
-        out_nb = g.get_out_neighbors(v)
+
+
         
 
 
@@ -107,15 +122,33 @@ def reconfig_graph(start: World, target: Configuration) -> Graph:
     g.vertex_properties["color"] = v_color
 
     g.edge_properties["orth_neighbours"] = edge_connected
+    g.edge_properties["legal_moves"] = legal_moves
+    g.edge_properties["color"] = e_color
 
     return g
 
 
+# Returns the indexes of the vertices with an outgoing edge to v
+# In other words v's incoming neighbours
+# This only returns blocks as perimeter nodes never have outgoing edges
 def get_orth_in_neighbours(g: Graph, v: int, edge_connected: EdgePropertyMap) -> list:
     nb = g.get_in_neighbours(v) #nb -> neighbours
     orth_nb = []
     for nb_i in nb:
         e = g.edge(nb_i, v)
+        if edge_connected[e]:
+            orth_nb.append(nb_i)
+
+    return orth_nb
+
+# Returns the indexes of the vertices with an incoming edge to v
+# In other words v's outgoing neighbours
+# This list contains perimeter and block nodes
+def get_orth_out_neighbours(g: Graph, v: int, edge_connected: EdgePropertyMap) -> list:
+    nb = g.get_out_neighbours(v) #nb -> neighbours
+    orth_nb = []
+    for nb_i in nb:
+        e = g.edge(v, nb_i)
         if edge_connected[e]:
             orth_nb.append(nb_i)
 

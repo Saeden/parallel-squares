@@ -19,7 +19,7 @@ def main():
     # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
 
     start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=9)
-    out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
+    # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
@@ -27,8 +27,8 @@ def main():
 
     world: World = World(max_x, max_y)
     world.add_configuration(start)
-    outworld: World = World(max_x, max_y)
-    outworld.add_configuration(out_start)
+    # outworld: World = World(max_x, max_y)
+    # outworld.add_configuration(out_start)
 
     print(f"\nThe world contains {world.num_blocks} blocks")
 
@@ -57,10 +57,10 @@ def main():
 
     # Init graph
     rc_graph: Graph = reconfig_graph(start=world, target=target)
-    # rc_graph.set_edge_filter(rc_graph.edge_properties["orth_neighbours"])
+    rc_graph.set_edge_filter(rc_graph.edge_properties["legal_moves"])
     # rc_graph.set_vertex_filter(rc_graph.vertex_properties["blocks"])
-    graph_draw(rc_graph, vertex_text=rc_graph.vertex_properties["position"], pos=rc_graph.vertex_properties["disp_position"], \
-        vertex_fill_color=rc_graph.vertex_properties["color"])
+    graph_draw(rc_graph, vertex_text=rc_graph.vertex_index, pos=rc_graph.vertex_properties["disp_position"], \
+        vertex_fill_color=rc_graph.vertex_properties["color"], edge_color=rc_graph.edge_properties["color"])
 
     # graph after move
     block = world.configuration.get_block_p((2, 4))
