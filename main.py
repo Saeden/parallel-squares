@@ -10,23 +10,24 @@ from graph_tool.all import *
 DEBUG = True
 
 def main():
-    # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
-    # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
-    # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
+    start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
 
     # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
 
-    start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=9)
+    # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
+    # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
     max_y: int = max((start.boundary[1], target.boundary[1]))
 
     world: World = World(max_x, max_y)
     world.add_configuration(start)
+    #world.add_targets(target=target)
     # outworld: World = World(max_x, max_y)
     # outworld.add_configuration(out_start)
 
@@ -56,7 +57,7 @@ def main():
     #world = transform_xy_monot(world, target)
 
     # Init graph
-    rc_graph: Graph = reconfig_graph(start=world, target=target)
+    rc_graph: Graph = reconfig_graph(world=world)
     rc_graph.set_edge_filter(rc_graph.edge_properties["legal_moves"])
     # rc_graph.set_vertex_filter(rc_graph.vertex_properties["blocks"])
     graph_draw(rc_graph, vertex_text=rc_graph.vertex_index, pos=rc_graph.vertex_properties["disp_position"], \
@@ -66,7 +67,7 @@ def main():
     block = world.configuration.get_block_p((2, 4))
     world.move_block_to(block, to=(3,3))
     world.print_world()
-    rc_graph: Graph = reconfig_graph(start=world, target=target)
+    rc_graph: Graph = reconfig_graph(world=world)
     # rc_graph.set_edge_filter(rc_graph.edge_properties["orth_neighbours"])
     # rc_graph.set_vertex_filter(rc_graph.vertex_properties["blocks"])
     graph_draw(rc_graph, vertex_text=rc_graph.vertex_properties["position"], pos=rc_graph.vertex_properties["disp_position"], \

@@ -124,6 +124,10 @@ class Configuration:
         self.blocks[block.id] = block
 
         #self.blocks.append(block)
+
+    def add_list(self, blocks: list) -> None:
+        for block in blocks:
+            self.add(block)
     
     def remove(self, block: Block) -> None:
         raise NotImplementedError
@@ -141,7 +145,7 @@ class Configuration:
     def get_block_p(self, p: tuple[int, int]) -> Block:
         for block in self.blocks:
             if not block:
-                break
+                continue
             if block.p == p:
                 return block
         return None
@@ -222,20 +226,31 @@ class World:
         self.used_cells[p[0]][p[1]] = -1
         self.num_blocks -= 1
 
-    def add_configuration(self, conf):
+    def add_configuration(self, conf: Configuration):
         self.configuration = conf
         for block in conf.blocks:
             if not block:
-                break
+                continue
             self.configuration.get_neighbours(block)
             self.add_block(block.p, block.id)
 
         self.get_perimeter()
+
+    def add_targets(self, target: Configuration):
+        for block in target.blocks:
+            if not block:
+                continue
+            id = self.used_cells[block.p[0]+1][block.p[1]+1]
+            if id >=0:
+                conf_block = self.configuration.get_block_id(id)
+                conf_block.status = 'finished'
+            else:
+                self.used_cells[block.p[0]+1][block.p[1]+1] = -3
     
     def get_perimeter(self):
         for block in self.configuration.blocks:
             if not block:
-                break
+                continue
             for p, nb in [((1,2),'N'), ((2,1),'E'), ((1,0),'S'), ((0,1),'W')]:
                 if not block.neighbours[nb]:
                     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
@@ -354,6 +369,8 @@ class World:
                     out_row.append('  ')
                 elif cell == -2:
                     out_row.append(colored('■ ', 'grey'))
+                elif cell == -3:
+                    out_row.append(colored('■ ', 'blue'))
                 elif self.configuration.get_block_id(cell).status == 'moving':
                     out_row.append(colored('■ ', 'red'))
                 elif self.configuration.get_block_id(cell).status == 'finished':
