@@ -1,7 +1,7 @@
 import shapes
 from world import *
 from algorithms import transform_xy_monot, mark_finished_blocks
-from graph import reconfig_graph
+from GT_graph import reconfig_graph
 import matplotlib
 matplotlib.use('gtk3agg')
 from graph_tool.all import *
@@ -10,9 +10,9 @@ from graph_tool.all import *
 DEBUG = True
 
 def main():
-    start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
-    out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
-    target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
+    # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
 
     # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
@@ -20,14 +20,18 @@ def main():
 
     # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
+    # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
+
+    start: Configuration = shapes.xy_monotone(max_x=100, max_y=100, max_vol=200, seed=9)
+    out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
+    target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
     max_y: int = max((start.boundary[1], target.boundary[1]))
 
     world: World = World(max_x, max_y)
     world.add_configuration(start)
-    #world.add_targets(target=target)
+    # world.add_targets(target=target)
     # outworld: World = World(max_x, max_y)
     # outworld.add_configuration(out_start)
 

@@ -9,7 +9,7 @@ class Block:
     def __init__(self, p: tuple[int, int], id: int):
         self.p = p
         self.id = id
-        self.status: str = 'unfinished'                         # status is in ['unfinished', 'backbone', 'moving', 'finished']
+        self.status: str = 'block'                         # status is in ['source', 'block', 'target']
         self.neighbours: dict[Block] = {'N': None, 'NE': None, 'E': None, 'SE': None, \
                                         'S': None, 'SW': None, 'W': None, 'NW': None}
         self.intention: str = ''                                # intention is in ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', '']
@@ -108,10 +108,6 @@ def direction(frm: tuple[int, int], to: tuple[int, int]) -> str:
     else:
         raise Exception("Tried to move more than one block.")
 
-class Move:
-    def __init__(self, frm: tuple[int, int]):
-        self.frm = frm
-
 # A glorified list of Blocks, which contains the the size of the boundary square of the configuration
 class Configuration:
     def __init__(self, boundary: tuple[int, int] = (None, None)):
@@ -124,6 +120,12 @@ class Configuration:
         self.blocks[block.id] = block
 
         #self.blocks.append(block)
+
+    def add_target(self, target: Block) -> None:
+        end = len(self.blocks)
+        while(self.blocks[end]):
+            end -= 1
+        self.blocks[end] = target
 
     def add_list(self, blocks: list) -> None:
         for block in blocks:
@@ -240,12 +242,14 @@ class World:
         for block in target.blocks:
             if not block:
                 continue
+
             id = self.used_cells[block.p[0]+1][block.p[1]+1]
             if id >=0:
                 conf_block = self.configuration.get_block_id(id)
-                conf_block.status = 'finished'
+                conf_block.status = 'block'
             else:
                 self.used_cells[block.p[0]+1][block.p[1]+1] = -3
+                
     
     def get_perimeter(self):
         for block in self.configuration.blocks:
@@ -255,6 +259,16 @@ class World:
                 if not block.neighbours[nb]:
                     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
+        
+        # if self.targets:
+        #     for target in self.targets.blocks:
+        #         if not target:
+        #             continue
+        #         for p, nb in [((1,2),'N'), ((2,1),'E'), ((1,0),'S'), ((0,1),'W')]:
+        #             if not target.neighbours[nb]:
+        #                 self.perimeter.append((target.p, (target.p[0]+p[0]-1, target.p[1]+p[1]-1)))
+        #                 self.used_cells[target.p[0]+p[0]][target.p[1]+p[1]] = -2
+            
 
 
     def move_block_to(self, block: Block, to: tuple[int, int]):
