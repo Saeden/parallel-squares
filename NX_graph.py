@@ -1,5 +1,7 @@
 import networkx as nx
 from world import World
+import matplotlib
+matplotlib.use('gtk3agg')
 import matplotlib.pyplot as plt
 from itertools import islice
 
@@ -7,7 +9,7 @@ from itertools import islice
 
 class ReconGraph:
     def __init__(self, world: World) -> None:
-        self.con_G = nx.DiGraph()
+        self.cnct_G = nx.DiGraph()
         self.path_G = None
         self.world = world
         self.add_nodes()
@@ -23,88 +25,135 @@ class ReconGraph:
             for y in range(len(self.world.used_cells[x])):
                 cell_type = self.world.used_cells[x][y]
                 if cell_type == -2:
-                    self.con_G.add_node(f"P{perimeterID}", loc=(x-1, y-1), color="gray", \
+                    self.cnct_G.add_node(f"P{perimeterID}", loc=(x-1, y-1), color="gray", \
                         move_color="gray", move_status=None, type="perimeter", status=None)
                     perimeterID += 1
                 elif cell_type >= 0:
                     block = self.world.configuration.get_block_p((x-1, y-1))
                     if block.status == 'source':
-                        self.con_G.add_node(block.id, loc=block.p, color="green", \
+                        self.cnct_G.add_node(block.id, loc=block.p, color="green", \
                             move_color="blue", move_status="normal", type="block", status="source")
 
                     elif block.status == 'block':
-                        self.con_G.add_node(block.id, loc=block.p, color="blue", \
+                        self.cnct_G.add_node(block.id, loc=block.p, color="blue", \
                             move_color="blue", move_status="normal", type="block", status=None)
                 elif cell_type == -3:
                     block = self.world.configuration.get_block_p((x-1, y-1))
-                    self.con_G.add_node(block.id, loc=block.p, color="black", \
+                    self.cnct_G.add_node(block.id, loc=block.p, color="black", \
                         move_color="black", move_status="None", type="block", status="target")
 
     def add_edges(self): # world: World, G: nx.DiGraph):
-        for node in self.con_G.nodes.data("type"):
-            if node[1] == "block":
+        for node in self.cnct_G.nodes(data=True):
+            if node[1]["type"] == "block" and (node[1]["status"] == None or node[1]["status"] == "source"):
                 block = self.world.configuration.get_block_id(node[0])
                 for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
                                     ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
                     nb = block.neighbours[nb_i]
                     if nb:
-                        nb_node = get_node_frm_attr(graph=self.con_G, attr="loc", val=nb.p)
+                        nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb.p)
                         if nb_i in ['N', 'E', 'S', 'W']:
-                            self.con_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_i)
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_i)
                         else:
-                            self.con_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
                         continue
-                    nb_node = get_node_frm_attr(graph=self.con_G, attr="loc", val=(block.p[0]+nb_p[0], block.p[1]+nb_p[1]))
+                    nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(block.p[0]+nb_p[0], block.p[1]+nb_p[1]))
                     if nb_node:
                         if nb_i in ['N', 'E', 'S', 'W']:
-                            self.con_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_i)
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_i)
                         else:
-                            self.con_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
 
     def mark_blocks(self): # G: nx.DiGraph):
-        for node in self.con_G.nodes.data("type"):
-            orth_nbs = get_orth_in_neighbours(graph=self.con_G, node=node)
+        for node in self.cnct_G.nodes.data("type"):
+            orth_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=node)
             if node[1] == "block" and len(orth_nbs) == 1:
-                self.con_G.nodes[node[0]]["move_status"] = "loose"
-                self.con_G.nodes[node[0]]["move_color"] = "yellow"
+                self.cnct_G.nodes[node[0]]["move_status"] = "loose"
+                self.cnct_G.nodes[node[0]]["move_color"] = "yellow"
                 
-                self.con_G.nodes[orth_nbs[0]]["move_status"] = "critical"
-                self.con_G.nodes[orth_nbs[0]]["move_color"] = "red"
+                self.cnct_G.nodes[orth_nbs[0]]["move_status"] = "critical"
+                self.cnct_G.nodes[orth_nbs[0]]["move_color"] = "red"
 
                 if self.world.num_blocks <= 3:
                     continue
 
-                nb_nbs = get_orth_in_neighbours(graph=self.con_G, node=orth_nbs[0])
-                nb_nbs.remove(node[0])
+                nb_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=orth_nbs[0])
+                try:
+                    nb_nbs.remove(node[0])
+                except:
+                    pass
                 if len(nb_nbs) == 1:
-                    self.con_G.nodes[nb_nbs[0]]["move_status"] = "critical"
-                    self.con_G.nodes[nb_nbs[0]]["move_color"] = "red"
+                    self.cnct_G.nodes[nb_nbs[0]]["move_status"] = "critical"
+                    self.cnct_G.nodes[nb_nbs[0]]["move_color"] = "red"
+
+    def make_path_graph(self):
+        self.path_G = nx.DiGraph(self.cnct_G)
+        for node in self.path_G.nodes(data="type"):
+            if node[1] == "block":
+                out_neighbours = self.path_G.out_edges(nbunch=node[0], data="edge_dir")
+                self.rm_blocked_diag_edges(out_neighbours)
 
     def finds_all_paths(self):
-        src_blocks = get_source_blocks(graph=self.con_G)
-        trgt_blocks = get_target_blocks(graph=self.con_G)
+        self.make_path_graph()
+        src_blocks = get_source_blocks(graph=self.path_G)
+        trgt_blocks = get_target_blocks(graph=self.path_G)
 
         all_paths = []
         for src_block in src_blocks:
             path_to_targets = []
             for target_block in trgt_blocks:
-                paths = list(nx.shortest_simple_paths(self.con_G, src_block, target_block))
+                paths = list(nx.shortest_simple_paths(self.path_G, src_block, target_block))
                 path_to_targets.append(paths[0])
-            all_paths.append(min(path_to_targets))
+            all_paths.append(min(path_to_targets, key=len))
 
         self.draw_all_paths(all_paths)
 
+    def rm_blocked_diag_edges(self, edges:list):
+        edges_to_rm = []
+        for edge in edges:
+            if edge[2] == 'NE':
+                nb1 = [x for (_, x, d) in edges if d == 'N' ]
+                nb2 = [x for (_, x, d) in edges if d == 'E' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+            
+            elif edge[2] == 'SE':
+                nb1 = [x for (_, x, d) in edges if d == 'S' ]
+                nb2 = [x for (_, x, d) in edges if d == 'E' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+
+            elif edge[2] == 'SW':
+                nb1 = [x for (_, x, d) in edges if d == 'S' ]
+                nb2 = [x for (_, x, d) in edges if d == 'W' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+            
+            elif edge[2] == 'NW':
+                nb1 = [x for (_, x, d) in edges if d == 'N' ]
+                nb2 = [x for (_, x, d) in edges if d == 'W' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+
+        for edge in edges_to_rm:
+            self.path_G.remove_edge(edge[0], edge[1])
+                
+          
+
 
     def draw_normal_colors(self):
-        pos = nx.get_node_attributes(self.con_G, 'loc')
-        node_color = nx.get_node_attributes(self.con_G, 'color')
-        nx.draw(self.con_G, with_labels=True, pos=pos, node_color=node_color.values())
+        pos = nx.get_node_attributes(self.cnct_G, 'loc')
+        node_color = nx.get_node_attributes(self.cnct_G, 'color')
+        nx.draw(self.cnct_G, with_labels=True, pos=pos, node_color=node_color.values())
         plt.show()
 
     def draw_move_colors(self):
-        pos = nx.get_node_attributes(self.con_G, 'loc')
-        node_color = nx.get_node_attributes(self.con_G, 'move_color')
-        nx.draw(self.con_G, with_labels=True, pos=pos, node_color=node_color.values())
+        pos = nx.get_node_attributes(self.cnct_G, 'loc')
+        node_color = nx.get_node_attributes(self.cnct_G, 'move_color')
+        nx.draw(self.cnct_G, with_labels=True, pos=pos, node_color=node_color.values())
         plt.show()
 
     def draw_all_paths(self, paths: list):
@@ -113,14 +162,15 @@ class ReconGraph:
             path_edges = [(p[n],p[n+1]) for n in range(len(p)-1)]
             edges.append(path_edges)
 
-        pos = nx.get_node_attributes(self.con_G, 'loc')
-        nx.draw_networkx_nodes(self.con_G,pos=pos)
-        nx.draw_networkx_labels(self.con_G,pos=pos)
-        nx.draw_networkx_edges(self.con_G, pos=pos, edgelist=self.con_G.edges, edge_color = "black", width=1)
+        pos = nx.get_node_attributes(self.path_G, 'loc')
+        node_color = nx.get_node_attributes(self.path_G, 'color')
+        nx.draw_networkx_nodes(self.path_G,pos=pos, node_color=node_color.values())
+        nx.draw_networkx_labels(self.path_G,pos=pos)
+        nx.draw_networkx_edges(self.path_G, pos=pos, edgelist=self.path_G.edges, edge_color = "black", width=1)
         colors = ['r', 'b', 'y']
         linewidths = [5,3,2]
         for ctr, edgelist in enumerate(edges):
-            nx.draw_networkx_edges(self.con_G,pos=pos,edgelist=edgelist,edge_color = colors[ctr%3], width=linewidths[ctr%3])
+            nx.draw_networkx_edges(self.path_G,pos=pos,edgelist=edgelist,edge_color = colors[ctr%3], width=linewidths[ctr%3])
         plt.show()
 
 def get_node_frm_attr(graph: nx.DiGraph, attr: str, val) -> int:
@@ -151,3 +201,5 @@ def get_target_blocks(graph: nx.DiGraph) -> list[int]:
         if node[1] == "target":
             output.append(node[0])
     return output
+
+
