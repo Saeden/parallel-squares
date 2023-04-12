@@ -3,7 +3,7 @@ from world import *
 from GT_graph import *
 from algorithms import transform_xy_monot
 
-def test_moves():
+def test_moves(world: World):
     
     print("\nAfter a move the world looks like this")
     block = world.configuration.get_block_id(2)

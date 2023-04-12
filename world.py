@@ -9,7 +9,7 @@ class Block:
     def __init__(self, p: tuple[int, int], id: int):
         self.p = p
         self.id = id
-        self.status: str = 'block'                         # status is in ['source', 'block', 'target']
+        self.status: str = 'source'                         # status is in ['source', 'block', 'target']
         self.neighbours: dict[Block] = {'N': None, 'NE': None, 'E': None, 'SE': None, \
                                         'S': None, 'SW': None, 'W': None, 'NW': None}
         self.intention: str = ''                                # intention is in ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', '']
@@ -122,10 +122,11 @@ class Configuration:
         #self.blocks.append(block)
 
     def add_target(self, target: Block) -> None:
-        end = len(self.blocks)
+        end = len(self.blocks) - 1
         while(self.blocks[end]):
             end -= 1
         self.blocks[end] = target
+        target.id = end
 
     def add_list(self, blocks: list) -> None:
         for block in blocks:
@@ -249,6 +250,11 @@ class World:
                 conf_block.status = 'block'
             else:
                 self.used_cells[block.p[0]+1][block.p[1]+1] = -3
+                block.status = 'target'
+                self.configuration.add_target(block)
+                self.configuration.get_neighbours(block)
+        
+        self.get_perimeter()
                 
     
     def get_perimeter(self):
@@ -259,15 +265,7 @@ class World:
                 if not block.neighbours[nb]:
                     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
-        
-        # if self.targets:
-        #     for target in self.targets.blocks:
-        #         if not target:
-        #             continue
-        #         for p, nb in [((1,2),'N'), ((2,1),'E'), ((1,0),'S'), ((0,1),'W')]:
-        #             if not target.neighbours[nb]:
-        #                 self.perimeter.append((target.p, (target.p[0]+p[0]-1, target.p[1]+p[1]-1)))
-        #                 self.used_cells[target.p[0]+p[0]][target.p[1]+p[1]] = -2
+
             
 
 
@@ -352,6 +350,10 @@ class World:
 
         while queue:
             currID = queue[0]
+            if currID >= self.num_blocks:
+                del queue[0]
+                continue
+
             if seen[currID]:
                 del queue[0]
                 continue
@@ -385,7 +387,7 @@ class World:
                     out_row.append(colored('■ ', 'grey'))
                 elif cell == -3:
                     out_row.append(colored('■ ', 'blue'))
-                elif self.configuration.get_block_id(cell).status == 'moving':
+                elif self.configuration.get_block_id(cell).status == 'source':
                     out_row.append(colored('■ ', 'red'))
                 elif self.configuration.get_block_id(cell).status == 'finished':
                     out_row.append(colored('■ ', 'green'))

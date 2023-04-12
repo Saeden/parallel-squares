@@ -206,3 +206,22 @@ def get_legal_edges(g: Graph, v: int, legal_moves: EdgePropertyMap) -> list:
             legal_e.append(e)
 
     return legal_e
+
+
+def test_graph(world: World):
+    # Init graph
+    rc_graph: Graph = reconfig_graph(world=world)
+    #rc_graph.set_edge_filter(rc_graph.edge_properties["legal_moves"])
+    # rc_graph.set_vertex_filter(rc_graph.vertex_properties["blocks"])
+    graph_draw(rc_graph, vertex_text=rc_graph.vertex_index, pos=rc_graph.vertex_properties["disp_position"], \
+        vertex_fill_color=rc_graph.vertex_properties["color"], edge_color=rc_graph.edge_properties["color"])
+
+    # graph after move
+    block = world.configuration.get_block_p((2, 4))
+    world.move_block_to(block, to=(3,3))
+    world.print_world()
+    rc_graph: Graph = reconfig_graph(world=world)
+    # rc_graph.set_edge_filter(rc_graph.edge_properties["orth_neighbours"])
+    # rc_graph.set_vertex_filter(rc_graph.vertex_properties["blocks"])
+    graph_draw(rc_graph, vertex_text=rc_graph.vertex_properties["position"], pos=rc_graph.vertex_properties["disp_position"], \
+        vertex_fill_color=rc_graph.vertex_properties["color"])  
