@@ -219,6 +219,7 @@ class World:
         self.used_cells: np.array = np.full((max_x+2, max_y+2), -1) #maybe add 2 to the (expected) boundary to allow for boundary moves
         self.num_blocks: int = 0
         self.configuration: Configuration = None
+        self.target: Configuration = None
         self.perimeter: list = []
 
     def add_block(self, p: tuple[int, int], id):
@@ -239,8 +240,17 @@ class World:
 
         self.get_perimeter()
 
-    def add_targets(self, target: Configuration):
-        for block in target.blocks:
+    def add_targets(self, target: Configuration = None):
+        if target:
+            self.target = target
+
+        # remove old targets
+        end = len(self.configuration.blocks) - 1
+        while(self.configuration.blocks[end]):
+            self.configuration.blocks[end] = None
+            end -= 1
+
+        for block in self.target.blocks:
             if not block:
                 continue
 
@@ -258,13 +268,27 @@ class World:
                 
     
     def get_perimeter(self):
+        # clear old perimeter
+        self.perimeter = []
+        for x in range(len(self.used_cells)):
+            for y in range(len(self.used_cells[x])):
+                if self.used_cells[x][y] == -2:
+                    self.used_cells[x][y] = -1
+
+        # find new perimeter
         for block in self.configuration.blocks:
             if not block:
                 continue
             for p, nb in [((1,2),'N'), ((2,1),'E'), ((1,0),'S'), ((0,1),'W')]:
-                if not block.neighbours[nb]:
+                x = block.p[0] + p[0]
+                y = block.p[1] + p[1]
+                if self.used_cells[x][y] < 0 and self.used_cells[x][y] != -3:
                     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
+
+                # if not block.neighbours[nb]:
+                #     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
+                #     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
 
             
 
@@ -276,6 +300,10 @@ class World:
             block.p = to
             block.rm_neighbours()
             self.configuration.get_neighbours(block)
+            # for nb in block.neighbours.values():
+            #     if nb:
+            #         nb.rm_neighbours()
+            #         self.configuration.get_neighbours(nb)
             self.get_perimeter()
 
     def is_valid(self, block: Block, to: tuple[int, int]) -> bool:
@@ -372,6 +400,15 @@ class World:
 
         return seenCount == self.num_blocks
 
+
+    def execute_path(self, path: list):
+        path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
+        for edge in path_edges:
+            block = self.configuration.get_block_p(edge[0])
+            if block:
+                self.move_block_to(block=block, to=edge[1])
+
+        self.add_targets()
     
     # Formats the world into a string format with the correct colors for different statuses
     def print_world(self):

@@ -25,8 +25,8 @@ def xy_monotone(max_x = 10, max_y = 10, max_vol = 50, DEBUG = DEBUG, seed = None
             break
         column_heights.append(rand_int)
     
-    max_x = len(column_heights)
-    max_y = max(column_heights)
+    max_x = len(column_heights)  + 3
+    max_y = max(column_heights)  + 3
     output: Configuration = Configuration((max_x, max_y))
     
     column_heights.sort(reverse=True)

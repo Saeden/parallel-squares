@@ -1,4 +1,5 @@
 from world import *
+from NX_graph import ReconGraph
 
 def transform_xy_monot_old(start: World, target: Configuration):
     #start = mark_finished_blocks(start=start, target=target)
@@ -54,8 +55,21 @@ def transform_xy_monot_old(start: World, target: Configuration):
 
     return start
 
-def transform_xy_monot(start: World, target: Configuration):
-    return
+def transform_xy_monot(world: World, target: Configuration):
+    rc_graph = ReconGraph(world=world)
+    # rc_graph.draw_normal_colors()
+    # rc_graph.draw_move_colors()
+    while rc_graph.src_blocks:
+        all_paths = rc_graph.finds_all_paths()
+        # rc_graph.draw_path_graph()
+        rc_graph.draw_all_paths(all_paths)
+        # for now just find the longest path and move all the blocks on that path
+        path = max(all_paths, key=len)
+        path = rc_graph.convert_ids_to_pos(path)
+        world.execute_path(path)
+        world.print_world()
+        rc_graph = ReconGraph(world=world)
+
 
 def mark_finished_blocks(start: World, target: Configuration):
     unfinished_blocks = []

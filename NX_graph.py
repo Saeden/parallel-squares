@@ -12,13 +12,16 @@ class ReconGraph:
         self.cnct_G = nx.DiGraph()
         self.path_G = None
         self.world = world
+
         self.add_nodes()
         self.add_edges()
         self.mark_blocks()
 
-
-
+        self.src_blocks = get_source_blocks(graph=self.cnct_G)
+        self.trgt_blocks = get_target_blocks(graph=self.cnct_G)
         
+
+
     def add_nodes(self): # world: World, G: nx.DiGraph):
         perimeterID = 0
         for x in range(len(self.world.used_cells)):
@@ -63,6 +66,40 @@ class ReconGraph:
                         else:
                             self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
 
+        #self.add_perimeter_edges()
+
+    
+    def add_perimeter_edges(self, path=False):
+        if path:
+            for node in self.path_G.nodes(data=True):
+                if node[1]["type"] == "perimeter":
+                    for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
+                                        ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
+                        p = node[1]["loc"]
+                        x = nb_p[0] + p[0]
+                        y = nb_p[1] + p[1]
+                        if x < -1 or y < - 1 or x > len(self.world.used_cells) - 2 or y >= len(self.world.used_cells[0]) - 2:
+                            continue
+                        if self.world.used_cells[x+1][y+1] != -1:
+                            nb_node = get_node_frm_attr(graph=self.path_G, attr="loc", val=(x, y))
+                            self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
+        
+        else:
+            for node in self.cnct_G.nodes(data=True):
+                if node[1]["type"] == "perimeter":
+                    for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
+                                        ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
+                        p = node[1]["loc"]
+                        x = nb_p[0] + p[0]
+                        y = nb_p[1] + p[1]
+                        if x < -1 or y < - 1 or x > len(self.world.used_cells) - 2 or y >= len(self.world.used_cells[0]) - 2:
+                            continue
+                        if self.world.used_cells[x+1][y+1] != -1:
+                            nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(x, y))
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
+
+        
+
     def mark_blocks(self): # G: nx.DiGraph):
         for node in self.cnct_G.nodes.data("type"):
             orth_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=node)
@@ -89,25 +126,38 @@ class ReconGraph:
         self.path_G = nx.DiGraph(self.cnct_G)
         for node in self.path_G.nodes(data="type"):
             if node[1] == "block":
-                out_neighbours = self.path_G.out_edges(nbunch=node[0], data="edge_dir")
-                self.rm_blocked_diag_edges(out_neighbours)
+                self.rm_blocked_diag_edges(node=node[0])
+                self.rm_unreachable_edges(node=node[0])
+        
+        self.add_perimeter_edges(path=True)
 
-    def finds_all_paths(self):
+        # self.draw_path_graph()
+                
+
+    def finds_all_paths(self) -> list[list]:
         self.make_path_graph()
-        src_blocks = get_source_blocks(graph=self.path_G)
-        trgt_blocks = get_target_blocks(graph=self.path_G)
 
         all_paths = []
-        for src_block in src_blocks:
+        for src_block in self.src_blocks:
             path_to_targets = []
-            for target_block in trgt_blocks:
-                paths = list(nx.shortest_simple_paths(self.path_G, src_block, target_block))
-                path_to_targets.append(paths[0])
-            all_paths.append(min(path_to_targets, key=len))
+            for target_block in self.trgt_blocks:
+                try:
+                    # paths = list(nx.shortest_simple_paths(self.path_G, src_block, target_block))
+                    # path_to_targets.append(paths[0])
+                    path = nx.shortest_path(self.path_G, src_block, target_block)
+                    path_to_targets.append(path)
+                except:
+                    print(f"No path between {src_block} and {target_block}. Moving to next pair...")
+            if path_to_targets:
+                all_paths.append(min(path_to_targets, key=len))
+            else:
+                raise ValueError("There are no paths from {src_block} to any target block.")
 
-        self.draw_all_paths(all_paths)
+        return all_paths
+        #self.draw_all_paths(all_paths)
 
-    def rm_blocked_diag_edges(self, edges:list):
+    def rm_blocked_diag_edges(self, node):
+        edges = self.path_G.out_edges(nbunch=node, data="edge_dir")
         edges_to_rm = []
         for edge in edges:
             if edge[2] == 'NE':
@@ -141,19 +191,147 @@ class ReconGraph:
         for edge in edges_to_rm:
             self.path_G.remove_edge(edge[0], edge[1])
                 
-          
+    def rm_unreachable_edges(self, node):
+        edges = self.cnct_G.out_edges(nbunch=node, data="edge_dir")
+        edges_to_rm = []
+        for edge in edges:
+            if self.cnct_G.nodes[edge[1]]["type"] == "perimeter" and edge[2] in ['N', 'E', 'S', 'W']:
+                found = False
+                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
+                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
+                        if my_nbs_nb == node:
+                            continue
+                        for my_nbs_nbs_nb in get_orth_out_neighbours(self.cnct_G,my_nbs_nb):
+                            if my_nbs_nbs_nb == node or my_nbs_nbs_nb == my_nb:
+                                continue
+                            try:
+                                self.cnct_G.edges[node, my_nbs_nbs_nb]
+                            except:
+                                continue
+                            if (node, my_nbs_nbs_nb) == edge[0:2]:
+                                found = True
+                                break
+                        if found:
+                            break
+                    if found:
+                        break
+                
+                if not found:
+                    edges_to_rm.append(edge)
+                    
+                
+            elif self.cnct_G.nodes[edge[1]]["type"] == "perimeter" and edge[2] in ['NE', 'SE', 'SW', 'NW']:
+                found = False
+                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
+                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
+                        if my_nbs_nb == node:
+                            continue
+                        try:
+                            self.cnct_G.edges[node, my_nbs_nb]
+                        except:
+                            continue
+                        if (node, my_nbs_nb) == edge[0:2]:
+                            found = True
+                            break
+                    if found:
+                        break
+                
+                if not found:
+                    edges_to_rm.append(edge)
+
+            elif self.cnct_G.nodes[edge[1]]["type"] == "block" and self.cnct_G.nodes[edge[1]]["status"] == "target"\
+                                                                and edge[2] in ['N', 'E', 'S', 'W']:
+                found = False
+                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
+                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
+                        if my_nbs_nb == node:
+                            continue
+                        for my_nbs_nbs_nb in get_orth_out_neighbours(self.cnct_G,my_nbs_nb):
+                            if my_nbs_nbs_nb == node or my_nbs_nbs_nb == my_nb:
+                                continue
+                            try:
+                                self.cnct_G.edges[node, my_nbs_nbs_nb]
+                            except:
+                                continue
+                            if (node, my_nbs_nbs_nb) == edge[0:2]:
+                                found = True
+                                break
+                        if found:
+                            break
+                    if found:
+                        break
+                
+                if not found:
+                    edges_to_rm.append(edge)
+                    
+            elif self.cnct_G.nodes[edge[1]]["type"] == "block" and self.cnct_G.nodes[edge[1]]["status"] == "target"\
+                                                                and edge[2] in ['NE', 'SE', 'SW', 'NW']:
+                found = False
+                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
+                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
+                        if my_nbs_nb == node:
+                            continue
+                        try:
+                            self.cnct_G.edges[node, my_nbs_nb]
+                        except:
+                            continue
+                        if (node, my_nbs_nb) == edge[0:2]:
+                            found = True
+                            break
+                    if found:
+                        break
+                
+                if not found:
+                    edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
+                    
+            
+            
+    def rm_unreachable_edges_old(self, node):
+        # Check the neighbours of each of my (node) neighbours
+        # If my neighbour is a block, its neighbour must be empty/perimeter
+        # and I must have a direct connection to that perimeter node in the
+        # adjacency graph
+        for edge in get_orth_out_neighbours(self.path_G, node):
+            # edge[0] is me, edge[1] is one of my neighbours
+            if self.cnct_G.nodes[edge[1]]["type"] == "block" and self.cnct_G.nodes[edge[1]]["status"] != "target":
+                for edge2 in get_orth_out_neighbours(self.path_G, edge[1]):
+                    # edge2[0] is my neighbour and edge2[1] is my neighbours neighbour
+                    if edge2[1] == node:
+                        continue
+                    
+
+
+
+    def convert_ids_to_pos(self, path: list):
+        output = []
+        for id in path:
+            output.append(self.path_G.nodes[id]["loc"])
+
+        return output
 
 
     def draw_normal_colors(self):
         pos = nx.get_node_attributes(self.cnct_G, 'loc')
         node_color = nx.get_node_attributes(self.cnct_G, 'color')
-        nx.draw(self.cnct_G, with_labels=True, pos=pos, node_color=node_color.values())
+        nx.draw(self.cnct_G, with_labels=True, pos=pos, node_color=node_color.values(), font_color="whitesmoke")
         plt.show()
 
     def draw_move_colors(self):
         pos = nx.get_node_attributes(self.cnct_G, 'loc')
         node_color = nx.get_node_attributes(self.cnct_G, 'move_color')
         nx.draw(self.cnct_G, with_labels=True, pos=pos, node_color=node_color.values())
+        plt.show()
+
+    def draw_path_graph(self):
+        pos = nx.get_node_attributes(self.cnct_G, 'loc')
+        node_color = nx.get_node_attributes(self.path_G, 'color')
+        nx.draw(self.path_G, with_labels=True, pos=pos, node_color=node_color.values())
         plt.show()
 
     def draw_all_paths(self, paths: list):
@@ -165,7 +343,7 @@ class ReconGraph:
         pos = nx.get_node_attributes(self.path_G, 'loc')
         node_color = nx.get_node_attributes(self.path_G, 'color')
         nx.draw_networkx_nodes(self.path_G,pos=pos, node_color=node_color.values())
-        nx.draw_networkx_labels(self.path_G,pos=pos)
+        nx.draw_networkx_labels(self.path_G,pos=pos, font_color="whitesmoke")
         nx.draw_networkx_edges(self.path_G, pos=pos, edgelist=self.path_G.edges, edge_color = "black", width=1)
         colors = ['r', 'b', 'y']
         linewidths = [5,3,2]
@@ -186,6 +364,14 @@ def get_orth_in_neighbours(graph: nx.DiGraph, node) -> list:
     for nb in all_neighbours:
         if nb[2] in ['N', 'E', 'S', 'W']:
             output.append(nb[0])
+    return output
+
+def get_orth_out_neighbours(graph: nx.DiGraph, node) -> list:
+    all_neighbours = graph.out_edges(node, data="edge_dir")
+    output = []
+    for nb in all_neighbours:
+        if nb[2] in ['N', 'E', 'S', 'W']:
+            output.append(nb[1])
     return output
 
 def get_source_blocks(graph: nx.DiGraph) -> list[int]:

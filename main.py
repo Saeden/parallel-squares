@@ -14,27 +14,32 @@ from NX_graph import ReconGraph
 DEBUG = True
 
 def main():
-    start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=12, seed=19)
-    out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
-    target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=12, seed=1)
+    # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=12, seed=19)
+    # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=12, seed=1)
 
-    # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
+    # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=20, seed=19)
+    # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    # target: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=20, seed=1)
+
+    start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
+    out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
+    target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
 
     # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
 
-    # start: Configuration = shapes.xy_monotone(max_x=100, max_y=100, max_vol=2000, seed=9)
+    # start: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
+    # target: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=1)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
     max_y: int = max((start.boundary[1], target.boundary[1]))
 
     world: World = World(max_x, max_y)
     world.add_configuration(start)
+    world.print_world()
     world.add_targets(target=target)
     # outworld: World = World(max_x, max_y)
     # outworld.add_configuration(out_start)
@@ -44,10 +49,7 @@ def main():
     print("The world looks as follows:")
     world.print_world()
 
-    rc_graph = ReconGraph(world=world)
-    # rc_graph.draw_normal_colors()
-    # rc_graph.draw_move_colors()
-    rc_graph.finds_all_paths()
+    
     
 
     # target_world: World = World(max_x, max_y)
@@ -67,8 +69,8 @@ def main():
     # target_world.print_world()
     # print()
 
-    #print("\nRun the algorithm: ")
-    #world = transform_xy_monot(world, target)
+    print("\nRun the algorithm: ")
+    world = transform_xy_monot(world, target)
 
     
 

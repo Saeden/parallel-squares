@@ -114,7 +114,8 @@ def reconfig_graph(world: World) -> Graph:
         in_nbs = get_orth_in_neighbours(g, v, edge_connected)
         if len(in_nbs) == 4:
             continue
-
+        # The in neighbours denote other blocks as in this graph
+        # only block have out edges
         for in_nb in in_nbs:
             for nbs_out_nb in get_orth_out_neighbours(g, in_nb, edge_connected): # v's neighbour's out neighbour
                 if nbs_out_nb == v:
