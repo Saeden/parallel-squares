@@ -3,7 +3,7 @@ from world import World
 import matplotlib
 matplotlib.use('gtk3agg')
 import matplotlib.pyplot as plt
-from itertools import islice
+import math
 
 
 
@@ -141,10 +141,12 @@ class ReconGraph:
         for src_block in self.src_blocks:
             path_to_targets = []
             for target_block in self.trgt_blocks:
+                # path = dijkstra_with_weights(self.path_G, source=src_block, target=target_block)
                 try:
                     # paths = list(nx.shortest_simple_paths(self.path_G, src_block, target_block))
                     # path_to_targets.append(paths[0])
-                    path = nx.shortest_path(self.path_G, src_block, target_block)
+                    # path = nx.shortest_path(self.path_G, src_block, target_block)
+                    path = dijkstra_with_weights(self.path_G, source=src_block, target=target_block)
                     path_to_targets.append(path)
                 except:
                     print(f"No path between {src_block} and {target_block}. Moving to next pair...")
@@ -290,20 +292,6 @@ class ReconGraph:
             except:
                 print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
                     
-            
-            
-    def rm_unreachable_edges_old(self, node):
-        # Check the neighbours of each of my (node) neighbours
-        # If my neighbour is a block, its neighbour must be empty/perimeter
-        # and I must have a direct connection to that perimeter node in the
-        # adjacency graph
-        for edge in get_orth_out_neighbours(self.path_G, node):
-            # edge[0] is me, edge[1] is one of my neighbours
-            if self.cnct_G.nodes[edge[1]]["type"] == "block" and self.cnct_G.nodes[edge[1]]["status"] != "target":
-                for edge2 in get_orth_out_neighbours(self.path_G, edge[1]):
-                    # edge2[0] is my neighbour and edge2[1] is my neighbours neighbour
-                    if edge2[1] == node:
-                        continue
                     
 
 
@@ -388,4 +376,49 @@ def get_target_blocks(graph: nx.DiGraph) -> list[int]:
             output.append(node[0])
     return output
 
+def dijkstra_with_weights(G: nx.DiGraph, source, target):
+    dist = {}
+    prev = {}
+    queue = []
 
+    for node in G.nodes:
+        dist[node] = math.inf
+        prev[node] = None
+        queue.append(node)
+
+    dist[source] = 0
+
+    while queue:
+        min_dist = math.inf
+        for q in queue:
+            if dist[q] < min_dist:
+                n = q
+                min_dist = dist[q]
+        queue.remove(n)
+
+        if n == target:
+            break
+
+        for _, nb in G.out_edges(n):
+            new_dist = dist[n] + edge_length(G, n, nb)
+            if new_dist < dist[nb]:
+                dist[nb] = new_dist
+                prev[nb] = n
+
+    path = []
+    node = target
+    if prev[node] or node == source:
+        while node != None:
+            path = [node] + path
+            node = prev[node]
+
+    return path
+
+def edge_length(G: nx.DiGraph, node1, node2) -> int:
+    type1 = G.nodes[node1]["type"]
+    type2 = G.nodes[node2]["type"]
+
+    if type1 == "perimeter" and type2 == "perimeter":
+        return 2
+    else:
+        return 1
