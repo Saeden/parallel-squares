@@ -1,5 +1,6 @@
 from world import *
 from NX_graph import ReconGraph
+import copy
 
 def transform_xy_monot_old(start: World, target: Configuration):
     #start = mark_finished_blocks(start=start, target=target)
@@ -57,19 +58,50 @@ def transform_xy_monot_old(start: World, target: Configuration):
 
 def transform_xy_monot(world: World, target: Configuration):
     rc_graph = ReconGraph(world=world)
-    # rc_graph.draw_normal_colors()
+    # rc_graph.draw_path_graph()
     # rc_graph.draw_move_colors()
+    move_num = 1
     while rc_graph.src_blocks:
         all_paths = rc_graph.finds_all_paths()
+        # rc_graph.draw_move_colors()
         # rc_graph.draw_path_graph()
-        rc_graph.draw_all_paths(all_paths)
-        # for now just find the longest path and move all the blocks on that path
-        path = max(all_paths, key=len)
-        path = rc_graph.convert_ids_to_pos(path)
-        world.execute_path(path)
+        # rc_graph.draw_all_paths(all_paths)
+        # choose the longest path that doesn't disconnect the configuration
+        all_paths = sorted(all_paths, key=len, reverse=True)
+        #path = max(all_paths, key=len)
+        i = 0
+        path = all_paths[0]
+        pos_path = rc_graph.convert_ids_to_pos(path)
+        while (not check_path_connectivity(world=world, path=pos_path)):
+            i += 1
+            if i == len(all_paths):
+                raise IndexError("There are no connected paths :(")
+            path = all_paths[i]
+            pos_path = rc_graph.convert_ids_to_pos(path)
+        rc_graph.draw_all_paths([path])
+        world.execute_path(pos_path)
+        print(f"\nThe current number of moves that have been made is {move_num}\n")
         world.print_world()
+        move_num += 1
         rc_graph = ReconGraph(world=world)
+    
+    rc_graph.draw_path_graph()
 
+def check_path_connectivity(world: World, path: list) -> bool:
+    path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
+    copy_world = World(len(world.used_cells), len(world.used_cells[0]))
+    copy_config = copy.deepcopy(world.configuration)
+    copy_world.add_configuration(copy_config)
+    for edge in path_edges:
+        block = copy_world.configuration.get_block_p(edge[0])
+        if block:
+            try:
+                copy_world.move_block_to(block=block, to=edge[1])
+            except:
+                return False
+            
+            copy_world.rm_block(block=block)
+    return True
 
 def mark_finished_blocks(start: World, target: Configuration):
     unfinished_blocks = []

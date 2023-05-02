@@ -70,3 +70,21 @@ def transpose_monotone(lists):
                 output[j+column_diff].append(char)
     
     return output
+
+def strip(axis: int, size: int):
+    if axis == 0: # denotes the x axis
+        output = Configuration((size, 1))
+        for id in range(size):
+            block = Block((id, 0), id=id)
+            output.add(block=block)
+
+    elif axis == 1:
+        output = Configuration((1, size))
+        for id in range(size):
+            block = Block((0, id), id=id)
+            output.add(block=block)
+
+    else:
+        raise ValueError("Axis needs to be either 0 or 1 (0 for a strip along the x-axis and 1 for a strip along the y-axis).")
+
+    return output

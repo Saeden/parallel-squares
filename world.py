@@ -21,42 +21,6 @@ class Block:
                 out += 1
         return out
 
-    def check_intention(self):
-        for neighbour in ['N', 'E', 'S', 'W']:
-            if not self.neighbours[neighbour]:
-                continue
-            nb_intention = self.neighbours[neighbour].intention
-            if nb_intention == '':
-                continue
-            if (self.intention in nb_intention or nb_intention in self.intention) and neighbour in ['E', 'W']:
-                continue
-            elif self.intention in nb_intention and neighbour == 'N':
-                self.intention = ''
-            elif self.intention in nb_intention and neighbour == 'S':
-                nb_intention = ''
-            else:
-                raise Exception("This is a new case")
-
-    # Transforms an intention str to an actual (x, y) location of where the block intends to move
-    def intention_to_loc(self) -> tuple[int, int]:
-        if self.intention == '':
-            return ()
-        if self.intention == 'N':
-            return (self.p[0], self.p[1] + 1)
-        if self.intention == 'NE':
-            return (self.p[0] + 1, self.p[1] + 1)
-        if self.intention == 'E':
-            return (self.p[0] + 1, self.p[1])
-        if self.intention == 'SE':
-            return (self.p[0] + 1, self.p[1] - 1)
-        if self.intention == 'S':
-            return (self.p[0], self.p[1] - 1)
-        if self.intention == 'SW':
-            return (self.p[0] - 1, self.p[1] - 1)
-        if self.intention == 'W':
-            return (self.p[0] - 1, self.p[1])
-        if self.intention == 'NW':
-            return (self.p[0] - 1, self.p[1] + 1)
     
     # When the block moves it must set itself to None in the neighbour lists of its neighbours. 
     # So when block B1 has neighbour B2 in 'N' we must set the 'S' neighbour of B2 to None.
@@ -133,8 +97,9 @@ class Configuration:
             self.add(block)
     
     def remove(self, block: Block) -> None:
-        raise NotImplementedError
-        #self.blocks.remove(block)
+        block.rm_neighbours()
+        # self.blocks[block.id] = None
+        # np.delete(self.blocks, block.id)
 
     # return a block given an ID
     # NB. the id is the index of the block in the blocks array
@@ -220,15 +185,19 @@ class World:
         self.num_blocks: int = 0
         self.configuration: Configuration = None
         self.target: Configuration = None
+        self.target_list: list[Block] = []
         self.perimeter: list = []
 
     def add_block(self, p: tuple[int, int], id):
        self.used_cells[p[0]+1][p[1]+1] = id
        self.num_blocks += 1
 
-    def rm_block(self, p: tuple[int, int]):
-        self.used_cells[p[0]][p[1]] = -1
+    def rm_block(self, block: Block):
+        x = block.p[0]
+        y = block.p[1]
+        self.used_cells[x+1][y+1] = -1
         self.num_blocks -= 1
+        self.configuration.remove(block=block)
 
     def add_configuration(self, conf: Configuration):
         self.configuration = conf
@@ -244,12 +213,16 @@ class World:
         if target:
             self.target = target
 
-        # remove old targets
-        end = len(self.configuration.blocks) - 1
-        while(self.configuration.blocks[end]):
-            self.configuration.blocks[end] = None
-            end -= 1
+        for block in self.configuration.blocks:
+            if not block:
+                continue
+            if self.target.get_block_p(block.p) != None:
+                block.status = "block"
+            else:
+                block.status = "source"
 
+        self.target_list = []
+        
         for block in self.target.blocks:
             if not block:
                 continue
@@ -261,12 +234,20 @@ class World:
             else:
                 self.used_cells[block.p[0]+1][block.p[1]+1] = -3
                 block.status = 'target'
-                self.configuration.add_target(block)
+                self.target_list.append(block)
+                # self.configuration.add_target(block)
                 self.configuration.get_neighbours(block)
+
+        
         
         self.get_perimeter()
                 
-    
+    def get_target_p(self, p: tuple[int]):
+        for block in self.target_list:
+            if block.p == p:
+                return block
+        return None
+
     def get_perimeter(self):
         # clear old perimeter
         self.perimeter = []
@@ -286,6 +267,13 @@ class World:
                     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
 
+        for block in self.target_list:
+            for p, nb in [((1,2),'N'), ((2,1),'E'), ((1,0),'S'), ((0,1),'W')]:
+                x = block.p[0] + p[0]
+                y = block.p[1] + p[1]
+                if self.used_cells[x][y] < 0 and self.used_cells[x][y] != -3:
+                    self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
+                    self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
                 # if not block.neighbours[nb]:
                 #     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                 #     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
@@ -358,7 +346,12 @@ class World:
 
 
     def is_connected(self, skip: Block = None):
-        seen = np.full(self.num_blocks, False)
+        # seen = np.full(self.num_blocks, False)
+        seen = {}
+        for block in self.configuration.blocks:
+            if block:
+                seen[block.id] = False
+        
         seenCount = 0
         queue = [0]
 
@@ -378,9 +371,9 @@ class World:
 
         while queue:
             currID = queue[0]
-            if currID >= self.num_blocks:
-                del queue[0]
-                continue
+            # if currID >= self.num_blocks:
+            #     del queue[0]
+            #     continue
 
             if seen[currID]:
                 del queue[0]
@@ -423,11 +416,11 @@ class World:
                 elif cell == -2:
                     out_row.append(colored('■ ', 'grey'))
                 elif cell == -3:
-                    out_row.append(colored('■ ', 'blue'))
+                    out_row.append(colored('■ ', 'black'))
                 elif self.configuration.get_block_id(cell).status == 'source':
-                    out_row.append(colored('■ ', 'red'))
-                elif self.configuration.get_block_id(cell).status == 'finished':
                     out_row.append(colored('■ ', 'green'))
+                elif self.configuration.get_block_id(cell).status == 'finished':
+                    out_row.append(colored('■ ', 'blue'))
                 else:
                     out_row.append('■ ')
         

@@ -19,6 +19,9 @@ class ReconGraph:
 
         self.src_blocks = get_source_blocks(graph=self.cnct_G)
         self.trgt_blocks = get_target_blocks(graph=self.cnct_G)
+
+        self.make_path_graph()
+        
         
 
 
@@ -41,9 +44,9 @@ class ReconGraph:
                         self.cnct_G.add_node(block.id, loc=block.p, color="blue", \
                             move_color="blue", move_status="normal", type="block", status=None)
                 elif cell_type == -3:
-                    block = self.world.configuration.get_block_p((x-1, y-1))
-                    self.cnct_G.add_node(block.id, loc=block.p, color="black", \
-                        move_color="black", move_status="None", type="block", status="target")
+                    block = self.world.get_target_p((x-1, y-1))
+                    self.cnct_G.add_node(f"T{block.id}", loc=block.p, color="black", \
+                        move_color="black", move_status="None", type="perimeter", status="target")
 
     def add_edges(self): # world: World, G: nx.DiGraph):
         for node in self.cnct_G.nodes(data=True):
@@ -71,8 +74,8 @@ class ReconGraph:
     
     def add_perimeter_edges(self, path=False):
         if path:
-            for node in self.path_G.nodes(data=True):
-                if node[1]["type"] == "perimeter":
+            for node in self.path_G.nodes(data=True) :
+                if node[1]["type"] == "perimeter" and not node[1]["status"]:
                     for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
                                         ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
                         p = node[1]["loc"]
@@ -86,7 +89,7 @@ class ReconGraph:
         
         else:
             for node in self.cnct_G.nodes(data=True):
-                if node[1]["type"] == "perimeter":
+                if node[1]["type"] == "perimeter" and not node[1]["status"]:
                     for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
                                         ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
                         p = node[1]["loc"]
@@ -100,7 +103,7 @@ class ReconGraph:
 
         
 
-    def mark_blocks(self): # G: nx.DiGraph):
+    def mark_blocks_old(self): # G: nx.DiGraph):
         for node in self.cnct_G.nodes.data("type"):
             orth_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=node)
             if node[1] == "block" and len(orth_nbs) == 1:
@@ -122,12 +125,48 @@ class ReconGraph:
                     self.cnct_G.nodes[nb_nbs[0]]["move_status"] = "critical"
                     self.cnct_G.nodes[nb_nbs[0]]["move_color"] = "red"
 
+            if node[1] == "block" and len(orth_nbs) == 2:
+                for nb in orth_nbs:
+                    nb_move_status = self.cnct_G.nodes[nb]["move_status"]
+                    if nb_move_status == "critical" or nb_move_status == "loose":
+                        self.cnct_G.nodes[node[0]]["move_status"] = "critical"
+                        self.cnct_G.nodes[node[0]]["move_color"] = "red"
+
+
+    def mark_blocks(self):
+        for node in self.cnct_G.nodes.data("type"):
+            orth_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=node)
+            if node[1] == "block" and len(orth_nbs) == 1:
+                self.cnct_G.nodes[node[0]]["move_status"] = "loose"
+                self.cnct_G.nodes[node[0]]["move_color"] = "yellow"
+                
+                self.cnct_G.nodes[orth_nbs[0]]["move_status"] = "critical"
+                self.cnct_G.nodes[orth_nbs[0]]["move_color"] = "red"
+
+                if self.world.num_blocks <= 3:
+                    continue
+
+                nb_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=orth_nbs[0])
+                try:
+                    nb_nbs.remove(node[0])
+                except:
+                    pass
+                if len(nb_nbs) == 1:
+                    self.cnct_G.nodes[nb_nbs[0]]["move_status"] = "critical"
+                    self.cnct_G.nodes[nb_nbs[0]]["move_color"] = "red"
+            elif node[1] == "block":
+                block = self.world.configuration.get_block_id(node[0])
+                if not self.world.is_connected(skip=block):
+                    self.cnct_G.nodes[node[0]]["move_status"] = "critical"
+                    self.cnct_G.nodes[node[0]]["move_color"] = "red"
+
     def make_path_graph(self):
         self.path_G = nx.DiGraph(self.cnct_G)
         for node in self.path_G.nodes(data="type"):
             if node[1] == "block":
                 self.rm_blocked_diag_edges(node=node[0])
                 self.rm_unreachable_edges(node=node[0])
+                self.rm_crit_block_edges(node=node[0])
         
         self.add_perimeter_edges(path=True)
 
@@ -135,25 +174,25 @@ class ReconGraph:
                 
 
     def finds_all_paths(self) -> list[list]:
-        self.make_path_graph()
-
         all_paths = []
         for src_block in self.src_blocks:
             path_to_targets = []
             for target_block in self.trgt_blocks:
-                # path = dijkstra_with_weights(self.path_G, source=src_block, target=target_block)
                 try:
-                    # paths = list(nx.shortest_simple_paths(self.path_G, src_block, target_block))
-                    # path_to_targets.append(paths[0])
-                    # path = nx.shortest_path(self.path_G, src_block, target_block)
                     path = dijkstra_with_weights(self.path_G, source=src_block, target=target_block)
                     path_to_targets.append(path)
                 except:
-                    print(f"No path between {src_block} and {target_block}. Moving to next pair...")
-            if path_to_targets:
+                    # print(f"No path between {src_block} and {target_block}. Moving to next pair...")
+                    pass
+            try:
                 all_paths.append(min(path_to_targets, key=len))
-            else:
-                raise ValueError("There are no paths from {src_block} to any target block.")
+            except:
+                # print(f"No path between {src_block} and any target block.")
+                pass
+                
+        if not all_paths:
+            self.draw_path_graph()
+            raise ValueError("There are no paths from any source block to any target block.")
 
         return all_paths
         #self.draw_all_paths(all_paths)
@@ -292,8 +331,13 @@ class ReconGraph:
             except:
                 print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
                     
-                    
-
+    def rm_crit_block_edges(self, node):
+        edges_to_rm = []
+        if self.path_G.nodes[node]["move_status"] == "critical":
+            for edge in self.path_G.out_edges(node):
+                edges_to_rm.append(edge[1])
+            for edge in edges_to_rm:
+                self.path_G.remove_edge(node, edge)
 
 
     def convert_ids_to_pos(self, path: list):
@@ -311,9 +355,9 @@ class ReconGraph:
         plt.show()
 
     def draw_move_colors(self):
-        pos = nx.get_node_attributes(self.cnct_G, 'loc')
-        node_color = nx.get_node_attributes(self.cnct_G, 'move_color')
-        nx.draw(self.cnct_G, with_labels=True, pos=pos, node_color=node_color.values())
+        pos = nx.get_node_attributes(self.path_G, 'loc')
+        node_color = nx.get_node_attributes(self.path_G, 'move_color')
+        nx.draw(self.path_G, with_labels=True, pos=pos, node_color=node_color.values())
         plt.show()
 
     def draw_path_graph(self):
@@ -416,9 +460,12 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
 
 def edge_length(G: nx.DiGraph, node1, node2) -> int:
     type1 = G.nodes[node1]["type"]
-    type2 = G.nodes[node2]["type"]
+    status1 = G.nodes[node1]["status"]
 
-    if type1 == "perimeter" and type2 == "perimeter":
-        return 2
+    type2 = G.nodes[node2]["type"]
+    status2 = G.nodes[node2]["status"]
+
+    if type1 == "perimeter" and type2 == "perimeter" and not status1 and not status2:
+        return 3
     else:
         return 1

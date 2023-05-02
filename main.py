@@ -22,17 +22,25 @@ def main():
     # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # target: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=20, seed=1)
 
-    start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
-    target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
+    # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
+    # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
+    # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=1)
 
     # start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
 
+    # Example D in [[Transforming one xy-monotone shape to another]]
+    # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
+    # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
+
     # start: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=1)
+
+    start: Configuration = shapes.strip(axis=0, size=10)
+    target: Configuration = shapes.strip(axis=1, size=10)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
     max_y: int = max((start.boundary[1], target.boundary[1]))
