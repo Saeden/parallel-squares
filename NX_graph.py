@@ -383,6 +383,23 @@ class ReconGraph:
             nx.draw_networkx_edges(self.path_G,pos=pos,edgelist=edgelist,edge_color = colors[ctr%3], width=linewidths[ctr%3])
         plt.show()
 
+    def draw_all_paths_and_move_colors(self, paths: list):
+        edges = []
+        for p in paths:
+            path_edges = [(p[n],p[n+1]) for n in range(len(p)-1)]
+            edges.append(path_edges)
+
+        pos = nx.get_node_attributes(self.path_G, 'loc')
+        node_color = nx.get_node_attributes(self.path_G, 'move_color')
+        nx.draw_networkx_nodes(self.path_G,pos=pos, node_color=node_color.values())
+        nx.draw_networkx_labels(self.path_G,pos=pos, font_color="whitesmoke")
+        nx.draw_networkx_edges(self.path_G, pos=pos, edgelist=self.path_G.edges, edge_color = "black", width=1)
+        colors = ['r', 'b', 'y']
+        linewidths = [5,3,2]
+        for ctr, edgelist in enumerate(edges):
+            nx.draw_networkx_edges(self.path_G,pos=pos,edgelist=edgelist,edge_color = colors[ctr%3], width=linewidths[ctr%3])
+        plt.show() 
+
 def get_node_frm_attr(graph: nx.DiGraph, attr: str, val) -> int:
     for node in graph.nodes.data(attr):
         if node[1] == val:

@@ -416,7 +416,7 @@ class World:
                 elif cell == -2:
                     out_row.append(colored('■ ', 'grey'))
                 elif cell == -3:
-                    out_row.append(colored('■ ', 'black'))
+                    out_row.append(colored('■ ', 'red'))
                 elif self.configuration.get_block_id(cell).status == 'source':
                     out_row.append(colored('■ ', 'green'))
                 elif self.configuration.get_block_id(cell).status == 'finished':

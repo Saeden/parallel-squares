@@ -66,6 +66,7 @@ def transform_xy_monot(world: World, target: Configuration):
         # rc_graph.draw_move_colors()
         # rc_graph.draw_path_graph()
         # rc_graph.draw_all_paths(all_paths)
+        # rc_graph.draw_all_paths_and_move_colors(all_paths)
         # choose the longest path that doesn't disconnect the configuration
         all_paths = sorted(all_paths, key=len, reverse=True)
         #path = max(all_paths, key=len)
@@ -78,7 +79,7 @@ def transform_xy_monot(world: World, target: Configuration):
                 raise IndexError("There are no connected paths :(")
             path = all_paths[i]
             pos_path = rc_graph.convert_ids_to_pos(path)
-        rc_graph.draw_all_paths([path])
+        # rc_graph.draw_all_paths([path])
         world.execute_path(pos_path)
         print(f"\nThe current number of moves that have been made is {move_num}\n")
         world.print_world()
@@ -96,7 +97,7 @@ def check_path_connectivity(world: World, path: list) -> bool:
         block = copy_world.configuration.get_block_p(edge[0])
         if block:
             try:
-                copy_world.move_block_to(block=block, to=edge[1])
+                copy_world.is_valid(block=block, to=edge[1])
             except:
                 return False
             
