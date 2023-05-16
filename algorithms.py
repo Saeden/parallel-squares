@@ -1,6 +1,6 @@
 from world import *
 from NX_graph import ReconGraph
-import copy
+from networkx import is_weakly_connected, subgraph_view
 
 def transform_xy_monot_old(start: World, target: Configuration):
     #start = mark_finished_blocks(start=start, target=target)
@@ -73,13 +73,14 @@ def transform_xy_monot(world: World, target: Configuration):
         i = 0
         path = all_paths[0]
         pos_path = rc_graph.convert_ids_to_pos(path)
-        while (not check_path_connectivity(world=world, path=pos_path)):
+        while (not check_path_connectivity(graph=rc_graph, world=world, path=pos_path)):
             i += 1
             if i == len(all_paths):
                 raise IndexError("There are no connected paths :(")
             path = all_paths[i]
             pos_path = rc_graph.convert_ids_to_pos(path)
-        # rc_graph.draw_all_paths([path])
+        if move_num == 10:
+            rc_graph.draw_all_paths([path])
         world.execute_path(pos_path)
         print(f"\nThe current number of moves that have been made is {move_num}\n")
         world.print_world()
@@ -88,21 +89,35 @@ def transform_xy_monot(world: World, target: Configuration):
     
     rc_graph.draw_path_graph()
 
-def check_path_connectivity(world: World, path: list) -> bool:
+def check_path_connectivity(graph: ReconGraph, world: World, path: list) -> bool:
     path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
-    copy_world = World(len(world.used_cells), len(world.used_cells[0]))
-    copy_config = copy.deepcopy(world.configuration)
-    copy_world.add_configuration(copy_config)
+    blocks = {block.id:True for block in world.configuration.blocks}
+
+    def filter_node(node):
+        if type(node) == int:
+            return blocks[node]
+        else:
+            return False
+    
+    def filter_edge(node1, node2):
+        return graph.cnct_G[node1][node2].get("edge_connected", True)
+
+    only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+
     for edge in path_edges:
-        block = copy_world.configuration.get_block_p(edge[0])
+        block = world.configuration.get_block_p(edge[0])
         if block:
-            try:
-                copy_world.is_valid(block=block, to=edge[1])
-            except:
+            if not is_weakly_connected(only_blocks_view):
                 return False
-            
-            copy_world.rm_block(block=block)
+            blocks[block.id] = False
+        only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+
+    if not is_weakly_connected(only_blocks_view):
+        return False
     return True
+
+
+
 
 def mark_finished_blocks(start: World, target: Configuration):
     unfinished_blocks = []

@@ -29,6 +29,7 @@ class Block:
             neighbour = self.neighbours[nb]
             if neighbour:
                 neighbour.rm_opposite(loc=nb)
+                self.neighbours[nb] = None
 
     def rm_opposite(self, loc: str):
         if loc == 'N':
@@ -236,7 +237,7 @@ class World:
                 block.status = 'target'
                 self.target_list.append(block)
                 # self.configuration.add_target(block)
-                self.configuration.get_neighbours(block)
+                # self.configuration.get_neighbours(block)
 
         
         

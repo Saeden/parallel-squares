@@ -47,6 +47,7 @@ class ReconGraph:
                     block = self.world.get_target_p((x-1, y-1))
                     self.cnct_G.add_node(f"T{block.id}", loc=block.p, color="black", \
                         move_color="black", move_status="None", type="perimeter", status="target")
+        
 
     def add_edges(self): # world: World, G: nx.DiGraph):
         for node in self.cnct_G.nodes(data=True):
