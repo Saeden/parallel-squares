@@ -101,38 +101,7 @@ class ReconGraph:
                         if self.world.used_cells[x+1][y+1] != -1:
                             nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(x, y))
                             self.cnct_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
-
-        
-
-    def mark_blocks_old(self): # G: nx.DiGraph):
-        for node in self.cnct_G.nodes.data("type"):
-            orth_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=node)
-            if node[1] == "block" and len(orth_nbs) == 1:
-                self.cnct_G.nodes[node[0]]["move_status"] = "loose"
-                self.cnct_G.nodes[node[0]]["move_color"] = "yellow"
-                
-                self.cnct_G.nodes[orth_nbs[0]]["move_status"] = "critical"
-                self.cnct_G.nodes[orth_nbs[0]]["move_color"] = "red"
-
-                if self.world.num_blocks <= 3:
-                    continue
-
-                nb_nbs = get_orth_in_neighbours(graph=self.cnct_G, node=orth_nbs[0])
-                try:
-                    nb_nbs.remove(node[0])
-                except:
-                    pass
-                if len(nb_nbs) == 1:
-                    self.cnct_G.nodes[nb_nbs[0]]["move_status"] = "critical"
-                    self.cnct_G.nodes[nb_nbs[0]]["move_color"] = "red"
-
-            if node[1] == "block" and len(orth_nbs) == 2:
-                for nb in orth_nbs:
-                    nb_move_status = self.cnct_G.nodes[nb]["move_status"]
-                    if nb_move_status == "critical" or nb_move_status == "loose":
-                        self.cnct_G.nodes[node[0]]["move_status"] = "critical"
-                        self.cnct_G.nodes[node[0]]["move_color"] = "red"
-
+ 
 
     def mark_blocks(self):
         for node in self.cnct_G.nodes.data("type"):
@@ -173,7 +142,6 @@ class ReconGraph:
 
         # self.draw_path_graph()
                 
-
     def finds_all_paths(self) -> list[list]:
         all_paths = []
         for src_block in self.src_blocks:
@@ -197,6 +165,8 @@ class ReconGraph:
 
         return all_paths
         #self.draw_all_paths(all_paths)
+
+
 
     def rm_blocked_diag_edges(self, node):
         edges = self.path_G.out_edges(nbunch=node, data="edge_dir")
@@ -349,6 +319,50 @@ class ReconGraph:
         return output
 
 
+    def is_move_valid(self, move: tuple[tuple[int, int]], node) -> bool:
+        def get_nb_frm_dir(node, dir: str) -> bool:
+            all_neighbours = self.cnct_G.out_edges(node, data="edge_dir")
+            for nb in all_neighbours:
+                if type(nb[1]) == int and nb[2] == dir:
+                    return True
+            return False
+        
+        dir = (move[1][0]-move[0][0], move[1][1]-move[0][1])
+        if dir == (0, 1):    #N
+            if get_nb_frm_dir(node, 'E') and get_nb_frm_dir(node, 'NE')\
+                or get_nb_frm_dir(node,'W') and get_nb_frm_dir(node, 'NW'):
+                return True
+        elif dir == (1, 1):  #NE or EN
+            if get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'N')\
+                or get_nb_frm_dir(node,'N') and not get_nb_frm_dir(node, 'E'):
+                return True
+        elif dir == (1, 0):  #E
+            if get_nb_frm_dir(node, 'N') and get_nb_frm_dir(node, 'NE')\
+                or get_nb_frm_dir(node,'S') and get_nb_frm_dir(node, 'SE'):
+                return True
+        elif dir == (1, -1): #SE or ES
+            if get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'S')\
+                or get_nb_frm_dir(node,'S') and not get_nb_frm_dir(node, 'E'):
+                return True
+        elif dir == (0, -1): #S
+            if get_nb_frm_dir(node, 'E') and get_nb_frm_dir(node, 'SE')\
+                or get_nb_frm_dir(node,'W') and get_nb_frm_dir(node, 'SW'):
+                return True
+        elif dir == (-1, -1):#SW or WS
+            if get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'S')\
+                or get_nb_frm_dir(node,'S') and not get_nb_frm_dir(node, 'W'):
+                return True
+        elif dir == (-1, 0): #W
+            if get_nb_frm_dir(node, 'N') and get_nb_frm_dir(node, 'NW')\
+                or get_nb_frm_dir(node,'S') and get_nb_frm_dir(node, 'SW'):
+                return True
+        elif dir == (-1, 1): #NW or WN
+            if get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'N')\
+                or get_nb_frm_dir(node,'N') and not get_nb_frm_dir(node, 'W'):
+                return True
+        else:
+            return False
+
     def draw_normal_colors(self):
         pos = nx.get_node_attributes(self.cnct_G, 'loc')
         node_color = nx.get_node_attributes(self.cnct_G, 'color')
@@ -476,6 +490,44 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
 
     return path
 
+def dijkstra_with_weights_old(G: nx.DiGraph, source, target):
+    dist = {}
+    prev = {}
+    queue = []
+
+    for node in G.nodes:
+        dist[node] = math.inf
+        prev[node] = None
+        queue.append(node)
+
+    dist[source] = 0
+
+    while queue:
+        min_dist = math.inf
+        for q in queue:
+            if dist[q] < min_dist:
+                n = q
+                min_dist = dist[q]
+        queue.remove(n)
+
+        if n == target:
+            break
+
+        for _, nb in G.out_edges(n):
+            new_dist = dist[n] + edge_length(G, n, nb)
+            if new_dist < dist[nb]:
+                dist[nb] = new_dist
+                prev[nb] = n
+
+    path = []
+    node = target
+    if prev[node] or node == source:
+        while node != None:
+            path = [node] + path
+            node = prev[node]
+
+    return path
+
 def edge_length(G: nx.DiGraph, node1, node2) -> int:
     type1 = G.nodes[node1]["type"]
     status1 = G.nodes[node1]["status"]
@@ -487,3 +539,25 @@ def edge_length(G: nx.DiGraph, node1, node2) -> int:
         return 3
     else:
         return 1
+    
+
+def direction(frm: tuple[int, int], to: tuple[int, int]) -> str:
+    direction = (to[0]-frm[0], to[1]-frm[1])
+    if direction == (0, 1):
+        return 'N'
+    if direction == (1, 1):
+        return 'NE'
+    if direction == (1, 0):
+        return 'E'
+    if direction == (1, -1):
+        return 'SE'
+    if direction == (0, -1):
+        return 'S'
+    if direction == (-1, -1):
+        return 'SW'
+    if direction == (-1, 0):
+        return 'W'
+    if direction == (-1, 1):
+        return 'NW'
+    else:
+        raise Exception("Tried to move more than one block.")

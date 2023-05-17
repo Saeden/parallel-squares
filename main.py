@@ -40,17 +40,17 @@ def main():
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=1)
 
-    # # STRIP 1 - small strip, x-axis to y-axis
-    # start: Configuration = shapes.strip(axis=0, size=10)
-    # target: Configuration = shapes.strip(axis=1, size=10)
+    # STRIP 1 - small strip, x-axis to y-axis
+    start: Configuration = shapes.strip(axis=0, size=10)
+    target: Configuration = shapes.strip(axis=1, size=10)
 
-    # STRIP 2 - big strip, y-axis to x-axis
+    # # STRIP 2 - big strip, y-axis to x-axis
     # start: Configuration = shapes.strip(axis=1, size=40)
     # target: Configuration = shapes.strip(axis=0, size=40)
 
-    # Rectangle 1 - tall to flat rectangle, no loose block
-    start: Configuration = shapes.rectangle(5, 10)
-    target: Configuration = shapes.rectangle(10, 5)
+    # # Rectangle 1 - tall to flat rectangle, no loose block
+    # start: Configuration = shapes.rectangle(5, 10)
+    # target: Configuration = shapes.rectangle(10, 5)
 
 
     max_x: int = max((start.boundary[0], target.boundary[0]))

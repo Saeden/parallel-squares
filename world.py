@@ -52,7 +52,7 @@ class Block:
 
 
 
-def direction(frm: tuple[int, int], to: tuple[int, int]) -> str:
+def dir(frm: tuple[int, int], to: tuple[int, int]) -> str:
     direction = (to[0]-frm[0], to[1]-frm[1])
     if direction == (0, 1):
         return 'N'

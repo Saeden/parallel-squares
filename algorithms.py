@@ -73,14 +73,15 @@ def transform_xy_monot(world: World, target: Configuration):
         i = 0
         path = all_paths[0]
         pos_path = rc_graph.convert_ids_to_pos(path)
-        while (not check_path_connectivity(graph=rc_graph, world=world, path=pos_path)):
+        while (not check_path_connectivity(graph=rc_graph, world=world, path=pos_path, path_ids=path)):
             i += 1
             if i == len(all_paths):
-                raise IndexError("There are no connected paths :(")
+                rc_graph.draw_all_paths(all_paths)
+                raise ValueError("There are no connected paths :(")
             path = all_paths[i]
             pos_path = rc_graph.convert_ids_to_pos(path)
-        if move_num == 10:
-            rc_graph.draw_all_paths([path])
+        
+        rc_graph.draw_all_paths([path])
         world.execute_path(pos_path)
         print(f"\nThe current number of moves that have been made is {move_num}\n")
         world.print_world()
@@ -89,8 +90,9 @@ def transform_xy_monot(world: World, target: Configuration):
     
     rc_graph.draw_path_graph()
 
-def check_path_connectivity(graph: ReconGraph, world: World, path: list) -> bool:
+def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_ids: list) -> bool:
     path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
+    edge_ids = [(path_ids[n],path_ids[n+1]) for n in range(len(path_ids)-1)]
     blocks = {block.id:True for block in world.configuration.blocks}
 
     def filter_node(node):
@@ -103,14 +105,16 @@ def check_path_connectivity(graph: ReconGraph, world: World, path: list) -> bool
         return graph.cnct_G[node1][node2].get("edge_connected", True)
 
     only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
-
-    for edge in path_edges:
+    for ind, edge in enumerate(path_edges):
         block = world.configuration.get_block_p(edge[0])
         if block:
             if not is_weakly_connected(only_blocks_view):
                 return False
+            if not graph.is_move_valid(edge, node=edge_ids[(-ind)-1][0]):
+                return False
             blocks[block.id] = False
-        only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+            only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+           
 
     if not is_weakly_connected(only_blocks_view):
         return False
