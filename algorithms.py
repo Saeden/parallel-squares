@@ -81,7 +81,7 @@ def transform_xy_monot(world: World, target: Configuration):
             path = all_paths[i]
             pos_path = rc_graph.convert_ids_to_pos(path)
         
-        rc_graph.draw_all_paths([path])
+        # rc_graph.draw_all_paths([path])
         world.execute_path(pos_path)
         print(f"\nThe current number of moves that have been made is {move_num}\n")
         world.print_world()
@@ -94,30 +94,33 @@ def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_id
     path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
     edge_ids = [(path_ids[n],path_ids[n+1]) for n in range(len(path_ids)-1)]
     blocks = {block.id:True for block in world.configuration.blocks}
+    for block in path_ids:
+        if type(block) == int:
+            blocks[block] = False
 
     def filter_node(node):
-        if type(node) == int:
+        try:
             return blocks[node]
-        else:
+        except:
             return False
     
     def filter_edge(node1, node2):
         return graph.cnct_G[node1][node2].get("edge_connected", True)
 
-    only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
     for ind, edge in enumerate(path_edges):
         block = world.configuration.get_block_p(edge[0])
         if block:
-            if not is_weakly_connected(only_blocks_view):
-                return False
+            blocks[edge_ids[(-ind)-1][1]] = True
+            only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
             if not graph.is_move_valid(edge, node=edge_ids[(-ind)-1][0]):
                 return False
-            blocks[block.id] = False
-            only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+            if not is_weakly_connected(only_blocks_view):
+                return False
+            blocks[edge_ids[(-ind)-1][1]] = False
            
 
-    if not is_weakly_connected(only_blocks_view):
-        return False
+    # if not is_weakly_connected(only_blocks_view):
+    #     return False
     return True
 
 

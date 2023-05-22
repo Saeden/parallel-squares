@@ -452,7 +452,7 @@ def get_target_blocks(graph: nx.DiGraph) -> list[int]:
             output.append(node[0])
     return output
 
-def dijkstra_with_weights(G: nx.DiGraph, source, target):
+def dijkstra_with_weights_new(G: nx.DiGraph, source, target):
     dist = {}
     prev = {}
     queue = []
@@ -475,6 +475,12 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
         if n == target:
             break
 
+        # prev_node = prev[n]
+        # if prev_node:
+        #     prev_dir = G.get_edge_data(u=prev_node, v=n)["edge_dir"]
+        #     edges = legal_out_edges(graph=G, node=n)
+        # else:
+        #     edges = G.out_edges(n) 
         for _, nb in G.out_edges(n):
             new_dist = dist[n] + edge_length(G, n, nb)
             if new_dist < dist[nb]:
@@ -490,7 +496,10 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
 
     return path
 
-def dijkstra_with_weights_old(G: nx.DiGraph, source, target):
+def legal_out_edges(graph: nx.DiGraph, node, prev_dir: str) -> list:
+    return NotImplementedError
+
+def dijkstra_with_weights(G: nx.DiGraph, source, target):
     dist = {}
     prev = {}
     queue = []
