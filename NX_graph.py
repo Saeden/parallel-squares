@@ -53,54 +53,60 @@ class ReconGraph:
         for node in self.cnct_G.nodes(data=True):
             if node[1]["type"] == "block" and (node[1]["status"] == None or node[1]["status"] == "source"):
                 block = self.world.configuration.get_block_id(node[0])
-                for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
+                for pos_val, nb_tag in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
                                     ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
-                    nb = block.neighbours[nb_i]
+                    nb = block.neighbours[nb_tag]
                     if nb:
                         nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb.p)
-                        if nb_i in ['N', 'E', 'S', 'W']:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_i)
+                        if nb_tag in ['N', 'E', 'S', 'W']:
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_tag)
                         else:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_tag)
                         continue
-                    nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(block.p[0]+nb_p[0], block.p[1]+nb_p[1]))
+                    nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(block.p[0]+pos_val[0], block.p[1]+pos_val[1]))
                     if nb_node:
-                        if nb_i in ['N', 'E', 'S', 'W']:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_i)
+                        if nb_tag in ['N', 'E', 'S', 'W']:
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_tag)
                         else:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_i)
+                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_tag)
+            
+            if node[1]["type"] == "perimeter" and node[1]["status"] == "target":
+                for pos_val, nb_tag in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
+                                    ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
+                    pos = node[1]["loc"]
+                    nb_pos = (pos[0]+pos_val[0], pos[1]+pos_val[1])
+                    nb_ind = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb_pos)
+                    if nb_ind:
+                        neighbour = self.cnct_G.nodes[nb_ind]
+                        if neighbour["type"] == "perimeter" and neighbour["status"] == "target" and nb_tag in ['N', 'E', 'S', 'W']:
+                            self.cnct_G.add_edge(node[0], nb_ind, edge_connected=True, edge_dir=nb_tag)
+                        elif neighbour["type"] == "perimeter" and neighbour["status"] == "target" and nb_tag not in ['N', 'E', 'S', 'W']:
+                            self.cnct_G.add_edge(node[0], nb_ind, edge_connected=False, edge_dir=nb_tag)
+
 
         #self.add_perimeter_edges()
 
     
-    def add_perimeter_edges(self, path=False):
-        if path:
-            for node in self.path_G.nodes(data=True) :
-                if node[1]["type"] == "perimeter" and not node[1]["status"]:
-                    for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
-                                        ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
-                        p = node[1]["loc"]
-                        x = nb_p[0] + p[0]
-                        y = nb_p[1] + p[1]
-                        if x < -1 or y < - 1 or x > len(self.world.used_cells) - 2 or y >= len(self.world.used_cells[0]) - 2:
-                            continue
-                        if self.world.used_cells[x+1][y+1] != -1:
-                            nb_node = get_node_frm_attr(graph=self.path_G, attr="loc", val=(x, y))
-                            self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
-        
-        else:
-            for node in self.cnct_G.nodes(data=True):
-                if node[1]["type"] == "perimeter" and not node[1]["status"]:
-                    for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
-                                        ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
-                        p = node[1]["loc"]
-                        x = nb_p[0] + p[0]
-                        y = nb_p[1] + p[1]
-                        if x < -1 or y < - 1 or x > len(self.world.used_cells) - 2 or y >= len(self.world.used_cells[0]) - 2:
-                            continue
-                        if self.world.used_cells[x+1][y+1] != -1:
-                            nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(x, y))
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
+    def add_perimeter_edges(self ):
+        for node in self.path_G.nodes(data=True) :
+            if node[1]["type"] == "perimeter" and not node[1]["status"]:
+                for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
+                                    ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
+                    p = node[1]["loc"]
+                    x = nb_p[0] + p[0]
+                    y = nb_p[1] + p[1]
+                    if x < -1 or y < - 1 or x > len(self.world.used_cells) - 2 or y >= len(self.world.used_cells[0]) - 2:
+                        continue
+                    if self.world.used_cells[x+1][y+1] != -1:
+                        my_in_edges = self.cnct_G.in_edges(node[0])
+                        nb_node = get_node_frm_attr(graph=self.path_G, attr="loc", val=(x, y))
+                        nb_in_edges = self.cnct_G.in_edges(nb_node)
+                        # self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
+                        for my_edge in my_in_edges:
+                            for nb_edge in nb_in_edges:
+                                if my_edge[0] == nb_edge[0] and self.cnct_G.nodes[my_edge[0]]["type"] == "block":
+                                    self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
+
  
 
     def mark_blocks(self):
@@ -138,23 +144,23 @@ class ReconGraph:
                 self.rm_unreachable_edges(node=node[0])
                 self.rm_crit_block_edges(node=node[0])
         
-        self.add_perimeter_edges(path=True)
+        self.add_perimeter_edges()
 
         # self.draw_path_graph()
                 
-    def finds_all_paths(self) -> list[list]:
+    def find_all_paths_max(self) -> list[list]:
         all_paths = []
         for src_block in self.src_blocks:
-            path_to_targets = []
+            paths_to_targets = []
             for target_block in self.trgt_blocks:
                 try:
                     path = dijkstra_with_weights(self.path_G, source=src_block, target=target_block)
-                    path_to_targets.append(path)
+                    paths_to_targets.append(path)
                 except:
                     # print(f"No path between {src_block} and {target_block}. Moving to next pair...")
                     pass
             try:
-                all_paths.append(min(path_to_targets, key=len))
+                all_paths.append(max(paths_to_targets, key=len))
             except:
                 # print(f"No path between {src_block} and any target block.")
                 pass
@@ -166,7 +172,29 @@ class ReconGraph:
         return all_paths
         #self.draw_all_paths(all_paths)
 
+    def find_all_paths_min(self) -> list[list]:
+        all_paths = []
+        for src_block in self.src_blocks:
+            paths_to_targets = []
+            for target_block in self.trgt_blocks:
+                try:
+                    path = dijkstra_with_weights(self.path_G, source=src_block, target=target_block)
+                    paths_to_targets.append(path)
+                except:
+                    # print(f"No path between {src_block} and {target_block}. Moving to next pair...")
+                    pass
+            try:
+                all_paths.append(min(paths_to_targets, key=len))
+            except:
+                # print(f"No path between {src_block} and any target block.")
+                pass
+                
+        if not all_paths:
+            self.draw_path_graph()
+            raise ValueError("There are no paths from any source block to any target block.")
 
+        return all_paths
+     
 
     def rm_blocked_diag_edges(self, node):
         edges = self.path_G.out_edges(nbunch=node, data="edge_dir")
@@ -178,6 +206,8 @@ class ReconGraph:
                 if nb1 and nb2:
                     if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
                         edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
             
             elif edge[2] == 'SE':
                 nb1 = [x for (_, x, d) in edges if d == 'S' ]
@@ -185,6 +215,9 @@ class ReconGraph:
                 if nb1 and nb2:
                     if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
                         edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+                
 
             elif edge[2] == 'SW':
                 nb1 = [x for (_, x, d) in edges if d == 'S' ]
@@ -192,13 +225,19 @@ class ReconGraph:
                 if nb1 and nb2:
                     if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
                         edges_to_rm.append(edge[0:2])
-            
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+                
+
             elif edge[2] == 'NW':
                 nb1 = [x for (_, x, d) in edges if d == 'N' ]
                 nb2 = [x for (_, x, d) in edges if d == 'W' ]
                 if nb1 and nb2:
                     if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
                         edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+                
 
         for edge in edges_to_rm:
             self.path_G.remove_edge(edge[0], edge[1])
@@ -407,7 +446,7 @@ class ReconGraph:
         pos = nx.get_node_attributes(self.path_G, 'loc')
         node_color = nx.get_node_attributes(self.path_G, 'move_color')
         nx.draw_networkx_nodes(self.path_G,pos=pos, node_color=node_color.values())
-        nx.draw_networkx_labels(self.path_G,pos=pos, font_color="whitesmoke")
+        nx.draw_networkx_labels(self.path_G,pos=pos, font_color="white")
         nx.draw_networkx_edges(self.path_G, pos=pos, edgelist=self.path_G.edges, edge_color = "black", width=1)
         colors = ['r', 'b', 'y']
         linewidths = [5,3,2]
@@ -452,52 +491,6 @@ def get_target_blocks(graph: nx.DiGraph) -> list[int]:
             output.append(node[0])
     return output
 
-def dijkstra_with_weights_new(G: nx.DiGraph, source, target):
-    dist = {}
-    prev = {}
-    queue = []
-
-    for node in G.nodes:
-        dist[node] = math.inf
-        prev[node] = None
-        queue.append(node)
-
-    dist[source] = 0
-
-    while queue:
-        min_dist = math.inf
-        for q in queue:
-            if dist[q] < min_dist:
-                n = q
-                min_dist = dist[q]
-        queue.remove(n)
-
-        if n == target:
-            break
-
-        # prev_node = prev[n]
-        # if prev_node:
-        #     prev_dir = G.get_edge_data(u=prev_node, v=n)["edge_dir"]
-        #     edges = legal_out_edges(graph=G, node=n)
-        # else:
-        #     edges = G.out_edges(n) 
-        for _, nb in G.out_edges(n):
-            new_dist = dist[n] + edge_length(G, n, nb)
-            if new_dist < dist[nb]:
-                dist[nb] = new_dist
-                prev[nb] = n
-
-    path = []
-    node = target
-    if prev[node] or node == source:
-        while node != None:
-            path = [node] + path
-            node = prev[node]
-
-    return path
-
-def legal_out_edges(graph: nx.DiGraph, node, prev_dir: str) -> list:
-    return NotImplementedError
 
 def dijkstra_with_weights(G: nx.DiGraph, source, target):
     dist = {}

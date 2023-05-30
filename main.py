@@ -89,7 +89,7 @@ def main():
     # print()
 
     print("\nRun the algorithm: ")
-    world = transform_xy_monot(world, target)
+    world = transform_xy_monot(world)
 
     
 
