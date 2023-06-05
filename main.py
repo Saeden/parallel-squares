@@ -1,6 +1,7 @@
 import shapes
 from world import *
 from algorithms import transform_xy_monot, mark_finished_blocks
+from matching import matching_monotone
 from GT_graph import reconfig_graph
 #import matplotlib
 #matplotlib.use('gtk3agg')
@@ -88,10 +89,11 @@ def main():
     # target_world.print_world()
     # print()
 
-    print("\nRun the algorithm: ")
-    world = transform_xy_monot(world)
+    # print("\nRun the algorithm: ")
+    # world = transform_xy_monot(world)
 
-    
+    print("Make a matching...")
+    world =  matching_monotone(world) 
 
 
 if __name__ == "__main__":
