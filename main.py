@@ -31,12 +31,12 @@ def main():
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
 
-    # Example D in [[Transforming one xy-monotone shape to another]]
+    # #Example D in [[Transforming one xy-monotone shape to another]]
     # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
 
-    # Bigger example
+    # # Bigger example
     # start: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=1)
@@ -49,9 +49,13 @@ def main():
     # start: Configuration = shapes.strip(axis=1, size=40)
     # target: Configuration = shapes.strip(axis=0, size=40)
 
-    # Rectangle 1 - tall to flat rectangle, no loose block
-    start: Configuration = shapes.rectangle(5, 10)
-    target: Configuration = shapes.rectangle(10, 5)
+    # # Rectangle 1 - tall to flat rectangle, no loose block
+    # start: Configuration = shapes.rectangle(5, 10)
+    # target: Configuration = shapes.rectangle(10, 5)
+
+    # New xy-monotone function, for less uniform examples
+    start: Configuration = shapes.specific_example(start=True)
+    target: Configuration = shapes.specific_example(start=False)
 
 
     max_x: int = max((start.boundary[0], target.boundary[0]))

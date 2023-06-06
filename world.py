@@ -366,7 +366,7 @@ class World:
 			# is then skipped, the function should return true
 			# but that works because the BFS starting at the skipped
 			# cube will not encounter any cubes)
-            # Thanks to Hakitaya et al. for this code/special case
+            # Thanks to Akitaya et al. for this code/special case
             if skip.id == 0 and self.num_blocks > 1:
                 queue = [1]
 
