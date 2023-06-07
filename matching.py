@@ -15,13 +15,14 @@ def matching_monotone(world: World) -> World:
         for matched_blocks in reversed(island):
             source = matched_blocks[0]
             target = matched_blocks[1]
-            if 0 in source.p or 0 in target.p:
+            if 0 in source or 0 in target:
                 execute_boundary_L_move(source=source, target=target, world=world)
             elif is_convex_move(source, target):
                 move_num += 1
                 print(f"\nThis matching is close enough for a single convex transition. Executing now.")
                 print(f"The total number of moves is {move_num}")
-                execute_convex_trans(source=source, to=target.p, world=world)
+                source_block = world.configuration.get_block_p(source)
+                execute_convex_trans(source=source_block, to=target, world=world)
             else:
                 move_num += 2
                 print(f"\nExecuting an L-shaped move. The total number of moves is {move_num}")
@@ -32,8 +33,8 @@ def matching_monotone(world: World) -> World:
 
 
 def is_convex_move(source: Block, target: Block) -> bool:
-    diff_x = target.p[0] - source.p[0]
-    diff_y = target.p[1] - source.p[1]
+    diff_x = target[0] - source[0]
+    diff_y = target[1] - source[1]
 
     if (diff_x, diff_y) in [(-1, 1), (1, -1)]:
         return True
@@ -91,10 +92,11 @@ def make_matching(world: World) -> list[list]:
             stack.append(src_block)
             while(ind+1==len(source_blocks) or target_blocks[0].p[0] < source_blocks[ind+1].p[0]):
                 matched_blocks = (stack[-1], target_blocks[0])
+                output = (stack[-1].p, target_blocks[0].p)
                 del target_blocks[0]
                 del stack[-1]
                 print(f"Source block; ID:{matched_blocks[0].id}, pos: {matched_blocks[0].p} | Target block; ID:{matched_blocks[1].id}, pos: {matched_blocks[1].p}")
-                matching_lst.append(matched_blocks)
+                matching_lst.append(output)
                 if not stack:
                     islands.append(matching_lst)
                     matching_lst = []
@@ -117,9 +119,9 @@ def execute_L_move(source: Block, target: Block, world: World):
     first_chain = []
     second_chain = []
 
-    if source.p[0] < target.p[0]:
-        current_block = (source.p[0], target.p[1])
-        while current_block[0] <= target.p[0]:
+    if source[0] < target[0]:
+        current_block = (source[0], target[1])
+        while current_block[0] <= target[0]:
             first_chain.append(current_block)
             current_block = (current_block[0]+1, current_block[1])
 
@@ -128,8 +130,8 @@ def execute_L_move(source: Block, target: Block, world: World):
         world.print_world()
 
 
-        current_block = source.p
-        while current_block[1] >= target.p[1]:
+        current_block = source
+        while current_block[1] >= target[1]:
             second_chain.append(current_block)
             current_block = (current_block[0], current_block[1]-1)
 

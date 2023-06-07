@@ -550,8 +550,8 @@ class MatchGraph:
         match_id = 0
         for matching_lst in matching_islands:
             for matched_blocks in matching_lst:
-                node1 = get_node_frm_attr(graph=self.match_G, attr="loc", val=matched_blocks[0].p)
-                node2 = get_node_frm_attr(graph=self.match_G, attr="loc", val=matched_blocks[1].p)
+                node1 = get_node_frm_attr(graph=self.match_G, attr="loc", val=matched_blocks[0])
+                node2 = get_node_frm_attr(graph=self.match_G, attr="loc", val=matched_blocks[1])
                 self.match_G.nodes[node1]["match_ID"] = match_id
                 self.match_G.nodes[node2]["match_ID"] = match_id
                 match_id += 1
