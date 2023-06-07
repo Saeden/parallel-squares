@@ -33,7 +33,7 @@ def make_matching(world: World):
     source_blocks: list = [block for block in world.configuration.blocks if block is not None and block.status == "source"]
     target_blocks: list = world.target_list
 
-    source_blocks = sorted(source_blocks, key=lambda block: (block.p[0], -block.p[1]))
+    source_blocks = sorted(source_blocks, key=lambda block: (-block.p[0], -block.p[1]))
     target_blocks = sorted(target_blocks, key= lambda block: (block.p[1], block.p[0]))
 
 
