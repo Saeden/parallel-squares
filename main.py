@@ -49,13 +49,13 @@ def main():
     # start: Configuration = shapes.strip(axis=1, size=40)
     # target: Configuration = shapes.strip(axis=0, size=40)
 
-    # # Rectangle 1 - tall to flat rectangle, no loose block
-    # start: Configuration = shapes.rectangle(5, 10)
-    # target: Configuration = shapes.rectangle(10, 5)
+    # Rectangle 1 - tall to flat rectangle, no loose block
+    start: Configuration = shapes.rectangle(5, 10)
+    target: Configuration = shapes.rectangle(10, 5)
 
-    # hard coded specific example
-    start: Configuration = shapes.specific_example(start=True)
-    target: Configuration = shapes.specific_example(start=False)
+    # # hard coded specific example
+    # start: Configuration = shapes.specific_example(start=True)
+    # target: Configuration = shapes.specific_example(start=False)
 
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
@@ -93,11 +93,11 @@ def main():
     # target_world.print_world()
     # print()
 
-    # print("\nRun the algorithm: ")
-    # world = transform_xy_monot(world)
+    print("\nRun the algorithm: ")
+    world = transform_xy_monot(world)
 
-    print("Make a matching...")
-    world =  matching_monotone(world) 
+    # print("Make a matching...")
+    # world =  matching_monotone(world) 
 
 
 if __name__ == "__main__":
