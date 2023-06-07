@@ -526,7 +526,7 @@ class MatchGraph:
                         elif neighbour["type"] == "perimeter" and neighbour["status"] == "target" and nb_tag not in ['N', 'E', 'S', 'W']:
                             self.match_G.add_edge(node[0], nb_ind, edge_connected=False, edge_dir=nb_tag)
         
-    def add_perimeter_edges(self ):
+    def add_perimeter_edges(self):
         for node in self.path_G.nodes(data=True) :
             if node[1]["type"] == "perimeter" and not node[1]["status"]:
                 for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
@@ -546,10 +546,24 @@ class MatchGraph:
                                 if my_edge[0] == nb_edge[0] and self.match_G.nodes[my_edge[0]]["type"] == "block":
                                     self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
 
-    def draw_normal_colors(self):
+    def add_match_labels(self, matching_islands: list):
+        match_id = 0
+        for matching_lst in matching_islands:
+            for matched_blocks in matching_lst:
+                node1 = get_node_frm_attr(graph=self.match_G, attr="loc", val=matched_blocks[0].p)
+                node2 = get_node_frm_attr(graph=self.match_G, attr="loc", val=matched_blocks[1].p)
+                self.match_G.nodes[node1]["match_ID"] = match_id
+                self.match_G.nodes[node2]["match_ID"] = match_id
+                match_id += 1
+
+
+    def draw_match_labels(self):
         pos = nx.get_node_attributes(self.match_G, 'loc')
         node_color = nx.get_node_attributes(self.match_G, 'color')
-        nx.draw(self.match_G, with_labels=True, pos=pos, node_color=node_color.values(), font_color="whitesmoke")
+        labels = nx.get_node_attributes(self.match_G, 'match_ID')
+        nx.draw_networkx_nodes(self.match_G,pos=pos, node_color=node_color.values())
+        nx.draw_networkx_labels(self.match_G,pos=pos, labels=labels, font_color="whitesmoke")
+        nx.draw_networkx_edges(self.match_G, pos=pos, edgelist=self.match_G.edges, edge_color = "black", width=1)
         plt.show()
 
 def get_node_frm_attr(graph: nx.DiGraph, attr: str, val) -> int:

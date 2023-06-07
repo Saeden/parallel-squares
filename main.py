@@ -53,7 +53,7 @@ def main():
     # start: Configuration = shapes.rectangle(5, 10)
     # target: Configuration = shapes.rectangle(10, 5)
 
-    # New xy-monotone function, for less uniform examples
+    # hard coded specific example
     start: Configuration = shapes.specific_example(start=True)
     target: Configuration = shapes.specific_example(start=False)
 
