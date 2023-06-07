@@ -94,6 +94,7 @@ def find_max_path(world, rc_graph):
     all_paths = sorted(all_paths, key=len, reverse=True)
     path = all_paths[0]
     pos_path = rc_graph.convert_ids_to_pos(path)
+    # rc_graph.draw_all_paths(all_paths)
     while (not check_path_connectivity(graph=rc_graph, world=world, path=pos_path, path_ids=path)):
         i += 1
         if i == len(all_paths):
