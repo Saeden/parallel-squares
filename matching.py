@@ -40,7 +40,7 @@ def make_matching(world: World) -> list[list]:
     target_blocks: list = world.target_list
 
     source_blocks = sorted(source_blocks, key=lambda block: (block.p[0], -block.p[1]))
-    target_blocks = sorted(target_blocks, key= lambda block: (-block.p[1], block.p[0]))
+    target_blocks = sorted(target_blocks, key= lambda block: (-block.p[1], -block.p[0]))
 
 
     matching_lst = []
