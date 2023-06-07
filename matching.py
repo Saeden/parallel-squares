@@ -4,12 +4,12 @@ from NX_graph import MatchGraph
 
 def matching_monotone(world: World) -> World:
     # Fill the boundary while preserving monotonicity
-    world = fill_boundary(world)
+    world = fill_boundary(world, True)
 
 
     # Make the matching
     matching = make_matching(world)
-
+    move_num = 0
     for island in matching:
         # make legal moves in each island, we need to reverse because we want to move the outer matches first (which are found last)
         for matched_blocks in reversed(island):
@@ -17,13 +17,30 @@ def matching_monotone(world: World) -> World:
             target = matched_blocks[1]
             if 0 in source.p or 0 in target.p:
                 execute_boundary_L_move(source=source, target=target, world=world)
+            elif is_convex_move(source, target):
+                move_num += 1
+                print(f"\nThis matching is close enough for a single convex transition. Executing now.")
+                print(f"The total number of moves is {move_num}")
+                execute_convex_trans(source=source, to=target.p, world=world)
             else:
+                move_num += 2
+                print(f"\nExecuting an L-shaped move. The total number of moves is {move_num}")
                 execute_L_move(source=source, target=target, world=world)
+                
 
     return world
 
 
-def fill_boundary(world: World) -> World:
+def is_convex_move(source: Block, target: Block) -> bool:
+    diff_x = target.p[0] - source.p[0]
+    diff_y = target.p[1] - source.p[1]
+
+    if (diff_x, diff_y) in [(-1, 1), (1, -1)]:
+        return True
+    else:
+        return False
+
+def fill_boundary(world: World, exec: bool) -> World:
     graph = MatchGraph(world)
     boundary_targets = []
     for target in graph.trgt_blocks:
@@ -32,6 +49,23 @@ def fill_boundary(world: World) -> World:
             boundary_targets.append((target, location))
 
     boundary_targets = sorted(boundary_targets, key = lambda x: x[1])
+
+    if exec:
+        # Hard coded for now....
+        path = [(7, 2), (7, 1), (8,0)]
+        print("Executing hard-coded boundary fill move 1")
+        world.execute_path(path)
+        world.print_world()
+
+        path2 = [(7,1), (8, 1)]
+        print("Executing hard-coded boundary fill move 2")
+        world.execute_path(path2)
+        world.print_world()
+
+        path3 = [(8,1), (9,0)]
+        print("Executing hard-coded boundary fill move 3")
+        world.execute_path(path3)
+        world.print_world()
 
     return world
 
@@ -74,6 +108,11 @@ def make_matching(world: World) -> list[list]:
 
     return islands
 
+def execute_convex_trans(source: Block, to: tuple[int], world: World):
+    world.move_block_to(source, to=to)
+    world.add_targets()
+    world.print_world()
+
 def execute_L_move(source: Block, target: Block, world: World):
     first_chain = []
     second_chain = []
@@ -83,6 +122,20 @@ def execute_L_move(source: Block, target: Block, world: World):
         while current_block[0] <= target.p[0]:
             first_chain.append(current_block)
             current_block = (current_block[0]+1, current_block[1])
+
+        world.execute_path(first_chain)
+        #for debugging
+        world.print_world()
+
+
+        current_block = source.p
+        while current_block[1] >= target.p[1]:
+            second_chain.append(current_block)
+            current_block = (current_block[0], current_block[1]-1)
+
+        world.execute_path(second_chain)
+        #for debugging
+        world.print_world()
 
     else:
         raise NotImplementedError
