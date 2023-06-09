@@ -11,16 +11,12 @@ def matching_monotone(world: World) -> World:
     matching = make_matching(world)
     move_num = 0
     for island in matching:
-        # make legal moves in each island, we need to reverse if general flow is left? Currently check only first elem
-        # This is not complete but should be a good heuristic
-        source_x_val = island[0][0][0]
-        target_x_val = island[0][1][0]
-        if source_x_val < target_x_val:
-            island = reversed(island)
+        # make legal moves in each island, we need to order the island such that the move order does not create hanging blocks
+        island = order_island(island)
         for matched_blocks in island:
             source = matched_blocks[0]
             target = matched_blocks[1]
-            if is_convex_move(source, target):
+            if is_convex_trans(source, target):
                 move_num += 1
                 print(f"\nThis matching is close enough for a single convex transition. Executing now.")
                 print(f"The total number of moves is {move_num}")
@@ -37,7 +33,7 @@ def matching_monotone(world: World) -> World:
     return world
 
 
-def is_convex_move(source: Block, target: Block) -> bool:
+def is_convex_trans(source: Block, target: Block) -> bool:
     diff_x = target[0] - source[0]
     diff_y = target[1] - source[1]
 
@@ -119,6 +115,20 @@ def make_matching(world: World) -> list[list]:
     graph.draw_match_labels()
 
     return islands
+
+def order_island(island: list[tuple]) -> list[tuple]:
+    output = []
+    if len(island) == 1:
+        return island
+    
+    for matched_blocks in island:
+        source = matched_blocks[0]
+        target = matched_blocks[1]
+        if source[0]<target[0]:
+            # this match is right flowing
+            pass
+
+    return output
 
 def execute_convex_trans(source: Block, to: tuple[int], world: World):
     world.move_block_to(source, to=to)
