@@ -4,25 +4,30 @@ from NX_graph import MatchGraph
 
 def matching_monotone(world: World) -> World:
     # Fill the boundary while preserving monotonicity
-    world = fill_boundary(world, True)
+    world = fill_boundary(world, False)
 
 
     # Make the matching
     matching = make_matching(world)
     move_num = 0
     for island in matching:
-        # make legal moves in each island, we need to reverse because we want to move the outer matches first (which are found last)
-        for matched_blocks in reversed(island):
+        # make legal moves in each island, we need to reverse if general flow is left? Currently check only first elem
+        # This is not complete but should be a good heuristic
+        source_x_val = island[0][0][0]
+        target_x_val = island[0][1][0]
+        if source_x_val < target_x_val:
+            island = reversed(island)
+        for matched_blocks in island:
             source = matched_blocks[0]
             target = matched_blocks[1]
-            if 0 in source or 0 in target:
-                execute_boundary_L_move(source=source, target=target, world=world)
-            elif is_convex_move(source, target):
+            if is_convex_move(source, target):
                 move_num += 1
                 print(f"\nThis matching is close enough for a single convex transition. Executing now.")
                 print(f"The total number of moves is {move_num}")
                 source_block = world.configuration.get_block_p(source)
                 execute_convex_trans(source=source_block, to=target, world=world)
+            elif 0 in source or 0 in target:
+                execute_boundary_L_move(source=source, target=target, world=world)
             else:
                 move_num += 2
                 print(f"\nExecuting an L-shaped move. The total number of moves is {move_num}")
@@ -90,13 +95,18 @@ def make_matching(world: World) -> list[list]:
         # else we have found the first matching
         else:
             stack.append(src_block)
-            while(ind+1==len(source_blocks) or target_blocks[0].p[0] < source_blocks[ind+1].p[0]):
-                matched_blocks = (stack[-1], target_blocks[0])
-                output = (stack[-1].p, target_blocks[0].p)
+            # leaving this in because I am a code hoarder
+            #  or
+            # first_log_var = target_blocks[0].p[0] < source_blocks[ind+1].p[0]
+            # second_log_var = not target_blocks[len(stack)-1].p[0] < source_blocks[ind].p[0]
+            while(ind+1==len(source_blocks) or target_blocks[0].p[0] < source_blocks[ind+1].p[0] and \
+                  not target_blocks[len(stack)-1].p[0] < source_blocks[ind].p[0] and stack):
+                for_print = (stack[-1], target_blocks[0])
+                matched_blocks = (stack[-1].p, target_blocks[0].p)
                 del target_blocks[0]
                 del stack[-1]
-                print(f"Source block; ID:{matched_blocks[0].id}, pos: {matched_blocks[0].p} | Target block; ID:{matched_blocks[1].id}, pos: {matched_blocks[1].p}")
-                matching_lst.append(output)
+                print(f"Source block; ID:{for_print[0].id}, pos: {for_print[0].p} | Target block; ID:{for_print[1].id}, pos: {for_print[1].p}")
+                matching_lst.append(matched_blocks)
                 if not stack:
                     islands.append(matching_lst)
                     matching_lst = []
@@ -140,7 +150,24 @@ def execute_L_move(source: Block, target: Block, world: World):
         world.print_world()
 
     else:
-        raise NotImplementedError
+        current_block = (target[0], source[1])
+        while current_block[1] <= target[1]:
+            first_chain.append(current_block)
+            current_block = (current_block[0], current_block[1]+1)
 
-def execute_boundary_L_move(source: Block, target: Block):
+        world.execute_path(first_chain)
+        #for debugging
+        world.print_world()
+
+
+        current_block = source
+        while current_block[0] >= target[0]:
+            second_chain.append(current_block)
+            current_block = (current_block[0]-1, current_block[1])
+
+        world.execute_path(second_chain)
+        #for debugging
+        world.print_world()
+
+def execute_boundary_L_move(source: Block, target: Block, world: World):
     raise NotImplementedError

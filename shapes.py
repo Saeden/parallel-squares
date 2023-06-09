@@ -97,7 +97,7 @@ def xy_monotone_new(max_vol = 50, DEBUG = DEBUG, seed = None):
 
     return output
 
-def specific_example(start: bool):
+def specific_example1(start: bool):
     shape_coordinates = []
     if start:
         output: Configuration = Configuration((8+1, 9+1))
@@ -124,6 +124,62 @@ def specific_example(start: bool):
     
 
     return output
+
+def specific_example2(start: bool):
+    shape_coordinates = []
+    if start:
+        output: Configuration = Configuration((7+1, 8+1))
+        source_block_coords = [(3, 3), (3, 4)]
+        shape_coordinates += source_block_coords
+    else:
+        output: Configuration = Configuration((7+1, 10+1))
+        target_cell_coords = [(1,6), (1,7)]
+        shape_coordinates += target_cell_coords
+
+
+    #these are the shared blocks between the start and target
+    shape_coordinates += [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7),\
+                          (1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),\
+                          (2, 0), (2, 1), (2, 2), (2, 3), (2, 4), \
+                          (3, 0), (3, 1), (3, 2),  \
+                          (4, 0), (4, 1), \
+                          (5, 0),
+                          (6,0)]
+
+    for id, coord in enumerate(shape_coordinates):
+        output.add(Block(p=coord, id=id))
+    
+
+    return output
+
+def specific_example3(start: bool):
+    shape_coordinates = []
+    if start:
+        output: Configuration = Configuration((7+1, 8+1))
+        source_block_coords = [(4, 1), (4, 2), (5, 1),]
+        shape_coordinates += source_block_coords
+    else:
+        output: Configuration = Configuration((7+1, 10+1))
+        target_cell_coords = [(2, 3), (2, 4),(1, 6)]
+        shape_coordinates += target_cell_coords
+
+
+    #these are the shared blocks between the start and target
+    shape_coordinates += [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), \
+                          (1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),\
+                          (2, 0), (2, 1), (2, 2),  \
+                          (3, 0), (3, 1), (3, 2),  \
+                          (4, 0), \
+                          (5, 0),
+                          (6,0)]
+
+    for id, coord in enumerate(shape_coordinates):
+        output.add(Block(p=coord, id=id))
+    
+
+    return output
+
+
 
 def strip(axis: int, size: int):
     if axis == 0: # denotes the x axis
