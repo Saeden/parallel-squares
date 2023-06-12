@@ -1,5 +1,5 @@
 from model.world import *
-from graphs.matching import MatchGraph
+from graphs.matched import MatchGraph
 
 
 def matching_monotone(world: World) -> World:

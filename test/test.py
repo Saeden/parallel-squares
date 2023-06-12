@@ -1,6 +1,6 @@
 import shapes.shapes as shapes
 from model.world import *
-from algorithms.algorithms import transform_xy_monot
+from algorithms.path_finding import transform_xy_monot
 
 def test_moves(world: World):
     

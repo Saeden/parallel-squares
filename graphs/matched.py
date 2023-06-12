@@ -108,12 +108,5 @@ class MatchGraph:
                 match_id += 1
 
 
-    def draw_match_labels(self):
-        pos = nx.get_node_attributes(self.match_G, 'loc')
-        node_color = nx.get_node_attributes(self.match_G, 'color')
-        labels = nx.get_node_attributes(self.match_G, 'match_ID')
-        nx.draw_networkx_nodes(self.match_G,pos=pos, node_color=node_color.values())
-        nx.draw_networkx_labels(self.match_G,pos=pos, labels=labels, font_color="whitesmoke")
-        nx.draw_networkx_edges(self.match_G, pos=pos, edgelist=self.match_G.edges, edge_color = "black", width=1)
-        plt.show()
+
 

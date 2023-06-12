@@ -1,14 +1,9 @@
-import shapes
-from world import *
-from algorithms import transform_xy_monot, mark_finished_blocks
-from matching import matching_monotone
-from GT_graph import reconfig_graph
-#import matplotlib
-#matplotlib.use('gtk3agg')
+import shapes.shapes as shapes
+from model.world import *
+from algorithms.path_finding import transform_xy_monot, mark_finished_blocks
+from algorithms.block_matching import matching_monotone
 from graph_tool.all import *
-
-import networkx as nx
-from NX_graph import ReconGraph
+from graphs.reconfiguration import ReconGraph
 
 
 
