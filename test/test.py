@@ -1,7 +1,6 @@
-import shapes
-from world import *
-from GT_graph import *
-from algorithms import transform_xy_monot
+import shapes.shapes as shapes
+from model.world import *
+from algorithms.algorithms import transform_xy_monot
 
 def test_moves(world: World):
     

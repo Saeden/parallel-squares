@@ -1,5 +1,5 @@
-from world import *
-from NX_graph import ReconGraph
+from model.world import *
+from graphs.reconfiguration import ReconGraph
 from networkx import is_weakly_connected, subgraph_view
 
 def transform_xy_monot_old(start: World, target: Configuration):

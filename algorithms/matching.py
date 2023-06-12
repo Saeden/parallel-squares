@@ -1,5 +1,5 @@
-from world import *
-from NX_graph import MatchGraph
+from model.world import *
+from graphs.matching import MatchGraph
 
 
 def matching_monotone(world: World) -> World:

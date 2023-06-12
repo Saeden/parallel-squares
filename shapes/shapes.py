@@ -1,5 +1,6 @@
 import random
-from world import *
+from model.world import *
+from model.block import Block
 
 DEBUG = False
 
@@ -129,7 +130,7 @@ def specific_example2(start: bool):
     shape_coordinates = []
     if start:
         output: Configuration = Configuration((7+1, 8+1))
-        source_block_coords = [(0, 7), (3, 4), (5, 1)]
+        source_block_coords = [(0, 7), (3, 3), (5, 1)]
         shape_coordinates += source_block_coords
     else:
         output: Configuration = Configuration((7+1, 10+1))
@@ -141,7 +142,7 @@ def specific_example2(start: bool):
     shape_coordinates += [(0, 0), (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), \
                           (1, 0), (1, 1), (1, 2), (1, 3), (1, 4), (1, 5),\
                           (2, 0), (2, 1), (2, 2), (2, 3), (2, 4), \
-                          (3, 0), (3, 1), (3, 2), (3,3),\
+                          (3, 0), (3, 1), (3, 2),  \
                           (4, 0), (4, 1), \
                           (5, 0),
                           (6,0)]
