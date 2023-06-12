@@ -1,4 +1,4 @@
-from block import Block
+from model.block import Block
 import numpy as np
 
 # A glorified list of Blocks, which contains the the size of the boundary square of the configuration

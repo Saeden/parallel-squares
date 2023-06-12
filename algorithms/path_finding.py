@@ -1,6 +1,7 @@
 from model.world import *
 from graphs.reconfiguration import ReconGraph
 from networkx import is_weakly_connected, subgraph_view
+from graphs.graph_draw import *
 
 def transform_xy_monot_old(start: World, target: Configuration):
     #start = mark_finished_blocks(start=start, target=target)
@@ -69,14 +70,14 @@ def transform_xy_monot(world: World):
             pos_path = find_split_path_max(world, rc_graph)
         if not pos_path:
             all_paths = rc_graph.find_all_paths_max() + rc_graph.find_all_paths_min()
-            rc_graph.draw_all_paths_and_move_colors(all_paths)
+            draw_all_paths_and_move_colors(rc_graph, all_paths)
             raise ValueError("There are no connected paths :(")
 
         # rc_graph.draw_move_colors()
         # rc_graph.draw_path_graph()
        
         # choose the longest path that doesn't disconnect the configuration
-        # rc_graph.draw_all_paths([path])
+        draw_all_paths(rc_graph, [path])
         # rc_graph.draw_all_paths_and_move_colors([path])
         world.execute_path(pos_path)
         print(f"\nThe current number of moves that have been made is {move_num}\n")
@@ -84,7 +85,7 @@ def transform_xy_monot(world: World):
         move_num += 1
         rc_graph = ReconGraph(world=world)
     
-    rc_graph.draw_path_graph()
+    draw_path_graph(rc_graph)
 
 def find_max_path(world, rc_graph):
     all_paths = rc_graph.find_all_paths_max()
@@ -154,7 +155,7 @@ def find_split_path_max(world, rc_graph):
 def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_ids: list) -> bool:
     path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
     edge_ids = [(path_ids[n],path_ids[n+1]) for n in range(len(path_ids)-1)]
-    blocks = {block.id:True for block in world.configuration.blocks}
+    blocks = {block.id:True for block in world.configuration.blocks if block}
     for block in path_ids:
         if type(block) == int:
             blocks[block] = False

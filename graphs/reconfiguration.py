@@ -1,6 +1,7 @@
 import networkx as nx
 from model.world import World
 from graphs.utils import *
+from model.block import Block
 
 
 class ReconGraph:
@@ -23,85 +24,136 @@ class ReconGraph:
 
     def add_nodes(self):
         perimeterID = 0
-        for x in range(len(self.world.used_cells)):
-            for y in range(len(self.world.used_cells[x])):
-                cell_type = self.world.used_cells[x][y]
-                if cell_type == -2:
-                    self.cnct_G.add_node(f"P{perimeterID}", loc=(x-1, y-1), color="gray", \
-                        move_color="gray", move_status=None, type="perimeter", status=None)
+        num_cols = len(self.world.used_cells)
+        num_rows = len(self.world.used_cells[0])
+
+        for x in range(num_cols):
+            for y in range(num_rows):
+                cell_type: int = self.world.used_cells[x][y]
+                
+                if cell_type == -2: #Perimeter node
+                    self.cnct_G.add_node(
+                            f"P{perimeterID}", 
+                            loc=(x-1, y-1), 
+                            color="gray",
+                            move_color="gray", 
+                            move_status=None, 
+                            type="perimeter", 
+                            status=None)
                     perimeterID += 1
-                elif cell_type >= 0:
+
+                elif cell_type >= 0: #Block node
                     block = self.world.configuration.get_block_p((x-1, y-1))
                     if block.status == 'source':
-                        self.cnct_G.add_node(block.id, loc=block.p, color="green", \
-                            move_color="blue", move_status="normal", type="block", status="source")
+                        self.cnct_G.add_node(
+                                block.id, 
+                                loc=block.p, 
+                                color="green",
+                                move_color="blue",
+                                move_status="normal",
+                                type="block", 
+                                status="source")
 
                     elif block.status == 'block':
-                        self.cnct_G.add_node(block.id, loc=block.p, color="blue", \
-                            move_color="blue", move_status="normal", type="block", status=None)
-                elif cell_type == -3:
+                        self.cnct_G.add_node(
+                                block.id, 
+                                loc=block.p, 
+                                color="blue",
+                                move_color="blue", 
+                                move_status="normal", 
+                                type="block", 
+                                status=None)
+                
+                elif cell_type == -3: #Target node
                     block = self.world.get_target_p((x-1, y-1))
-                    self.cnct_G.add_node(f"T{block.id}", loc=block.p, color="black", \
-                        move_color="black", move_status="None", type="perimeter", status="target")
+                    self.cnct_G.add_node(
+                            f"T{block.id}", 
+                            loc=block.p, 
+                            color="black", 
+                            move_color="black", 
+                            move_status="None", 
+                            type="perimeter", 
+                            status="target")
         
 
-    def add_edges(self): # world: World, G: nx.DiGraph):
+    def add_edges(self):
         for node in self.cnct_G.nodes(data=True):
-            if node[1]["type"] == "block" and (node[1]["status"] == None or node[1]["status"] == "source"):
-                block = self.world.configuration.get_block_id(node[0])
-                for pos_val, nb_tag in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
-                                    ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
-                    nb = block.neighbours[nb_tag]
-                    if nb:
-                        nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb.p)
-                        if nb_tag in ['N', 'E', 'S', 'W']:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_tag)
-                        else:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_tag)
-                        continue
-                    nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(block.p[0]+pos_val[0], block.p[1]+pos_val[1]))
-                    if nb_node:
-                        if nb_tag in ['N', 'E', 'S', 'W']:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_tag)
-                        else:
-                            self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_tag)
+            node_type = node[1]["type"]
+            node_status = node[1]["status"]
+
+            if node_type == "block" and (node_status == None or node_status == "source"):
+                self.add_block_neighbours(node)
             
-            if node[1]["type"] == "perimeter" and node[1]["status"] == "target":
-                for pos_val, nb_tag in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
-                                    ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
-                    pos = node[1]["loc"]
-                    nb_pos = (pos[0]+pos_val[0], pos[1]+pos_val[1])
-                    nb_ind = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb_pos)
-                    if nb_ind:
-                        neighbour = self.cnct_G.nodes[nb_ind]
-                        if neighbour["type"] == "perimeter" and neighbour["status"] == "target" and nb_tag in ['N', 'E', 'S', 'W']:
-                            self.cnct_G.add_edge(node[0], nb_ind, edge_connected=True, edge_dir=nb_tag)
-                        elif neighbour["type"] == "perimeter" and neighbour["status"] == "target" and nb_tag not in ['N', 'E', 'S', 'W']:
-                            self.cnct_G.add_edge(node[0], nb_ind, edge_connected=False, edge_dir=nb_tag)
+            elif node_type == "perimeter" and node_status == "target":
+                self.add_target_neighbours(node)
+
+            elif node_type == "perimeter" and not node_status:
+                self.add_perimeter_neighbours(node)
 
 
-        #self.add_perimeter_edges()
+
+    def add_target_neighbours(self, node):
+        node_pos: tuple[int] = node[1]["loc"]
+
+        nb_xy_diff = [(0,1),(1, 1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+        nb_tags = ['N','NE','E','SE', 'S','SW', 'W', 'NW']
+        for tag_index, pos_val in enumerate(nb_xy_diff):
+            nb_tag = nb_tags[tag_index]
+            nb_pos = (node_pos[0]+pos_val[0], node_pos[1]+pos_val[1])
+            nb_ind: int or None = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb_pos)
+            if nb_ind:
+                neighbour = self.cnct_G.nodes[nb_ind]
+                nb_type = neighbour["type"]
+                nb_status = neighbour["status"]
+                if nb_type == "perimeter" and nb_status == "target" and nb_tag in ['N', 'E', 'S', 'W']:
+                    self.cnct_G.add_edge(node[0], nb_ind, edge_connected=True, edge_dir=nb_tag)
+                elif nb_type == "perimeter" and nb_status == "target":
+                    self.cnct_G.add_edge(node[0], nb_ind, edge_connected=False, edge_dir=nb_tag)
+
+    def add_block_neighbours(self, node):
+        nb_xy_diff = [(0,1),(1, 1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+        nb_tags = ['N','NE','E','SE', 'S','SW', 'W', 'NW']
+        block: Block = self.world.configuration.get_block_id(node[0])
+
+        for tag_index, pos_val in enumerate(nb_xy_diff):
+            nb_tag = nb_tags[tag_index]
+
+            nb: Block or None = block.neighbours[nb_tag]
+            if nb and nb_tag in ['N', 'E', 'S', 'W']:
+                nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb.p)
+                self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_tag)
+            elif nb and nb_tag not in ['N', 'E', 'S', 'W']:
+                nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb.p)
+                self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_tag)
+
+            nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(block.p[0]+pos_val[0], block.p[1]+pos_val[1]))
+            if nb_node and nb_tag in ['N', 'E', 'S', 'W']:
+                self.cnct_G.add_edge(node[0], nb_node, edge_connected=True, edge_dir=nb_tag)
+            elif nb_node and nb_tag not in ['N', 'E', 'S', 'W']:
+                self.cnct_G.add_edge(node[0], nb_node, edge_connected=False, edge_dir=nb_tag)
 
     
-    def add_perimeter_edges(self ):
-        for node in self.path_G.nodes(data=True) :
-            if node[1]["type"] == "perimeter" and not node[1]["status"]:
-                for nb_p, nb_i in [((0,1),'N'), ((1, 1), 'NE'), ((1,0),'E'), ((1,-1), 'SE')\
-                                    ,((0,-1),'S'), ((-1,-1), 'SW'), ((-1,0),'W'), ((-1,1), 'NW')]:
-                    p = node[1]["loc"]
-                    x = nb_p[0] + p[0]
-                    y = nb_p[1] + p[1]
-                    if x < -1 or y < - 1 or x > len(self.world.used_cells) - 2 or y >= len(self.world.used_cells[0]) - 2:
-                        continue
-                    if self.world.used_cells[x+1][y+1] != -1:
-                        my_in_edges = self.cnct_G.in_edges(node[0])
-                        nb_node = get_node_frm_attr(graph=self.path_G, attr="loc", val=(x, y))
-                        nb_in_edges = self.cnct_G.in_edges(nb_node)
-                        # self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
-                        for my_edge in my_in_edges:
-                            for nb_edge in nb_in_edges:
-                                if my_edge[0] == nb_edge[0] and self.cnct_G.nodes[my_edge[0]]["type"] == "block":
-                                    self.path_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_i)
+    def add_perimeter_neighbours(self, node):
+        nb_xy_diff = [(0,1),(1, 1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
+        nb_tags = ['N','NE','E','SE', 'S','SW', 'W', 'NW']
+        for tag_index, nb_pos_diff in enumerate(nb_xy_diff):
+            nb_tag = nb_tags[tag_index]
+            node_pos = node[1]["loc"]
+            nb_x = nb_pos_diff[0] + node_pos[0]
+            nb_y = nb_pos_diff[1] + node_pos[1]
+            nb_type = self.world.used_cells[nb_x+1][nb_y+1]
+
+            num_cols = len(self.world.used_cells)
+            num_rows = len(self.world.used_cells[0])
+            if nb_x < -1 or nb_y < - 1 or nb_x > num_cols - 2 or nb_y >= num_rows - 2:
+                continue
+            if nb_type != -1 and self.is_move_valid(move=(node_pos, (nb_x, nb_y)), node=node[0]):
+                nb_node = get_node_frm_attr(graph=self.path_G, attr="loc", val=(nb_x, nb_y))
+                self.cnct_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_tag)
+                          
+
+    def add_perimeter_edges(self):
+        raise NotImplementedError
 
  
 
@@ -140,7 +192,6 @@ class ReconGraph:
                 self.rm_unreachable_edges(node=node[0])
                 self.rm_crit_block_edges(node=node[0])
         
-        self.add_perimeter_edges()
 
         # self.draw_path_graph()
                 
@@ -354,7 +405,7 @@ class ReconGraph:
         return output
 
 
-    def is_move_valid(self, move: tuple[tuple[int, int]], node) -> bool:
+    def is_move_valid(self, move: tuple[tuple[int, int]], node: int) -> bool:
         def get_nb_frm_dir(node, dir: str) -> bool:
             all_neighbours = self.cnct_G.out_edges(node, data="edge_dir")
             for nb in all_neighbours:

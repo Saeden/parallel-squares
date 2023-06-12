@@ -96,11 +96,11 @@ def main():
     # target_world.print_world()
     # print()
 
-    # print("\nRun the algorithm: ")
-    # world = transform_xy_monot(world)
+    print("\nRun the algorithm: ")
+    world = transform_xy_monot(world)
 
-    print("Make a matching...")
-    world =  matching_monotone(world) 
+    # print("Make a matching...")
+    # world =  matching_monotone(world) 
 
 
 if __name__ == "__main__":

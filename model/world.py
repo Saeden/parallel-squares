@@ -1,7 +1,7 @@
 import numpy as np
 from termcolor import colored
-from block import Block
-from configuration import Configuration
+from model.block import Block
+from model.configuration import Configuration
 
 class World:
     def __init__(self, max_x, max_y) -> None:
