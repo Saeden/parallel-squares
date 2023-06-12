@@ -86,6 +86,8 @@ def edge_length(G: nx.DiGraph, node1, node2) -> int:
 
     if type1 == "perimeter" and type2 == "perimeter" and not status1 and not status2:
         return 3
+    elif type1 == "block" and type2 == "perimeter" and not status2:
+        return 2
     else:
         return 1
     
