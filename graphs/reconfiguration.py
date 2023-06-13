@@ -186,8 +186,9 @@ class ReconGraph:
         for node in self.path_G.nodes(data="type"):
             if node[1] == "block":
                 self.rm_blocked_diag_edges(node=node[0])
-                self.rm_unreachable_edges(node=node[0])
+                # self.rm_unreachable_edges(node=node[0])
                 self.rm_crit_block_edges(node=node[0])
+                self.rm_illegal_block_moves(node=node[0])
             if node[1] == "perimeter":
                 self.rm_invalid_perim_edges(node=node[0])
 
@@ -290,7 +291,12 @@ class ReconGraph:
         edges = self.cnct_G.out_edges(nbunch=node, data="edge_dir")
         edges_to_rm = []
         for edge in edges:
-            if self.cnct_G.nodes[edge[1]]["type"] == "perimeter" and edge[2] in ['N', 'E', 'S', 'W']:
+            nb_type = self.cnct_G.nodes[edge[1]]["type"]
+            nb_dir = edge[2]
+            nb_status = self.cnct_G.nodes[edge[1]]["status"]
+
+            if nb_type == "perimeter" and nb_status == "target" \
+                                        and nb_dir in ['N', 'E', 'S', 'W']:
                 found = False
                 for my_nb in get_orth_out_neighbours(self.cnct_G, node):
                     for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
@@ -314,8 +320,8 @@ class ReconGraph:
                 if not found:
                     edges_to_rm.append(edge)
                     
-                
-            elif self.cnct_G.nodes[edge[1]]["type"] == "perimeter" and edge[2] in ['NE', 'SE', 'SW', 'NW']:
+            elif nb_type == "perimeter" and nb_status == "target"\
+                                        and nb_dir in ['NE', 'SE', 'SW', 'NW']:
                 found = False
                 for my_nb in get_orth_out_neighbours(self.cnct_G, node):
                     for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
@@ -334,8 +340,7 @@ class ReconGraph:
                 if not found:
                     edges_to_rm.append(edge)
 
-            elif self.cnct_G.nodes[edge[1]]["type"] == "block" and self.cnct_G.nodes[edge[1]]["status"] == "target"\
-                                                                and edge[2] in ['N', 'E', 'S', 'W']:
+            if nb_type == "perimeter" and nb_dir in ['N', 'E', 'S', 'W']:
                 found = False
                 for my_nb in get_orth_out_neighbours(self.cnct_G, node):
                     for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
@@ -359,8 +364,8 @@ class ReconGraph:
                 if not found:
                     edges_to_rm.append(edge)
                     
-            elif self.cnct_G.nodes[edge[1]]["type"] == "block" and self.cnct_G.nodes[edge[1]]["status"] == "target"\
-                                                                and edge[2] in ['NE', 'SE', 'SW', 'NW']:
+                
+            elif nb_type == "perimeter" and nb_dir in ['NE', 'SE', 'SW', 'NW']:
                 found = False
                 for my_nb in get_orth_out_neighbours(self.cnct_G, node):
                     for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
@@ -378,13 +383,33 @@ class ReconGraph:
                 
                 if not found:
                     edges_to_rm.append(edge)
+
+            
 
         for edge in edges_to_rm:
             try:
                 self.path_G.remove_edge(edge[0], edge[1])
             except:
-                print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
-                    
+                pass
+                #print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
+
+    def rm_illegal_block_moves(self, node):
+        out_edges = self.cnct_G.out_edges(nbunch=node)
+        edges_to_rm = []
+        node_pos = self.cnct_G.nodes[node]["loc"]
+        for edge in out_edges:
+            nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
+            if not is_move_valid_can_blocked(self.cnct_G, move=(node_pos, nb_pos), node=node):
+                edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                pass
+                #print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
+
+
     def rm_crit_block_edges(self, node):
         edges_to_rm = []
         if self.path_G.nodes[node]["move_status"] == "critical":
@@ -399,7 +424,7 @@ class ReconGraph:
         edges_to_rm = []
         for edge in edges:
             nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
-            if not is_move_valid(self.cnct_G, move=(node_pos, nb_pos), node=node):
+            if not is_move_valid_not_blocked(self.cnct_G, move=(node_pos, nb_pos), node=node):
                 edges_to_rm.append(edge)
 
         for edge in edges_to_rm:

@@ -2,7 +2,7 @@ from model.world import *
 from graphs.reconfiguration import ReconGraph
 from networkx import is_weakly_connected, subgraph_view
 from graphs.drawing import *
-from graphs.utils import is_move_valid
+from graphs.utils import is_move_valid_can_blocked, is_move_valid_not_blocked
 
 def transform_xy_monot(world: World):
     rc_graph = ReconGraph(world=world)
@@ -35,7 +35,7 @@ def transform_xy_monot(world: World):
 
 def find_max_path(world, rc_graph):
     all_paths = rc_graph.find_all_paths_max()
-    draw_all_paths(rc_graph, all_paths)
+    #draw_all_paths(rc_graph, all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
     all_paths = sorted(all_paths, key=len, reverse=True)
@@ -121,15 +121,12 @@ def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_id
         if block:
             blocks[edge_ids[(-ind)-1][1]] = True
             only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
-            if not is_move_valid(graph.cnct_G, edge, node=edge_ids[(-ind)-1][0]):
+            if not is_move_valid_can_blocked(graph.cnct_G, edge, node=edge_ids[(-ind)-1][0]):
                 return False
             if not is_weakly_connected(only_blocks_view):
                 return False
             blocks[edge_ids[(-ind)-1][1]] = False
            
-
-    # if not is_weakly_connected(only_blocks_view):
-    #     return False
     return True
 
 def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list) -> list:
@@ -155,7 +152,7 @@ def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list
         if block:
             blocks[edge_ids[(-ind)-1][1]] = True
             only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
-            if not is_move_valid(graph=graph.path_G, move=edge, node=edge_ids[(-ind)-1][0]):
+            if not is_move_valid_not_blocked(graph=graph.cnct_G, move=edge, node=edge_ids[(-ind)-1][0]):
                 return path[(-ind)-1:], path_ids[(-ind):]
             if not is_weakly_connected(only_blocks_view):
                 return path[(-ind)-1:], path_ids[(-ind):]
