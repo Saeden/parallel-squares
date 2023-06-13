@@ -33,7 +33,7 @@ def transform_xy_monot(world: World):
     
     draw_path_graph(rc_graph)
 
-def find_max_path(world, rc_graph):
+def find_max_path(world, rc_graph: ReconGraph):
     all_paths = rc_graph.find_all_paths_max()
     #draw_all_paths(rc_graph, all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
