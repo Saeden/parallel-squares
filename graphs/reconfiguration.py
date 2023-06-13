@@ -83,31 +83,11 @@ class ReconGraph:
 
             if node_type == "block" and (node_status == None or node_status == "source"):
                 self.add_block_neighbours(node)
-            
-            # elif node_type == "perimeter" and node_status == "target":
-            #     self.add_target_neighbours(node)
 
             elif node_type == "perimeter":
                 self.add_perimeter_neighbours(node)
 
-    def add_target_neighbours(self, node):
-        node_pos: tuple[int] = node[1]["loc"]
-
-        nb_xy_diff = [(0,1),(1, 1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
-        nb_tags = ['N','NE','E','SE', 'S','SW', 'W', 'NW']
-        for tag_index, pos_val in enumerate(nb_xy_diff):
-            nb_tag = nb_tags[tag_index]
-            nb_pos = (node_pos[0]+pos_val[0], node_pos[1]+pos_val[1])
-            nb_ind: int or None = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=nb_pos)
-            if nb_ind:
-                neighbour = self.cnct_G.nodes[nb_ind]
-                nb_type = neighbour["type"]
-                nb_status = neighbour["status"]
-                if nb_type == "perimeter" and nb_status == "target" and nb_tag in ['N', 'E', 'S', 'W']:
-                    self.cnct_G.add_edge(node[0], nb_ind, edge_connected=True, edge_dir=nb_tag)
-                elif nb_type == "perimeter" and nb_status == "target":
-                    self.cnct_G.add_edge(node[0], nb_ind, edge_connected=False, edge_dir=nb_tag)
-
+ 
     def add_block_neighbours(self, node):
         nb_xy_diff = [(0,1),(1, 1),(1,0),(1,-1),(0,-1),(-1,-1),(-1,0),(-1,1)]
         nb_tags = ['N','NE','E','SE', 'S','SW', 'W', 'NW']
@@ -151,6 +131,92 @@ class ReconGraph:
                 self.cnct_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_tag)
                           
 
+    def rm_blocked_diag_edges(self, node):
+        edges = self.path_G.out_edges(nbunch=node, data="edge_dir")
+        edges_to_rm = []
+        for edge in edges:
+            if edge[2] == 'NE':
+                nb1 = [x for (_, x, d) in edges if d == 'N' ]
+                nb2 = [x for (_, x, d) in edges if d == 'E' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+            
+            elif edge[2] == 'SE':
+                nb1 = [x for (_, x, d) in edges if d == 'S' ]
+                nb2 = [x for (_, x, d) in edges if d == 'E' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+                
+
+            elif edge[2] == 'SW':
+                nb1 = [x for (_, x, d) in edges if d == 'S' ]
+                nb2 = [x for (_, x, d) in edges if d == 'W' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+                
+
+            elif edge[2] == 'NW':
+                nb1 = [x for (_, x, d) in edges if d == 'N' ]
+                nb2 = [x for (_, x, d) in edges if d == 'W' ]
+                if nb1 and nb2:
+                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
+                        edges_to_rm.append(edge[0:2])
+                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
+                        edges_to_rm.append(edge[0:2])
+                
+
+        for edge in edges_to_rm:
+            self.path_G.remove_edge(edge[0], edge[1])
+                
+    def rm_illegal_block_moves(self, node):
+        out_edges = self.cnct_G.out_edges(nbunch=node)
+        edges_to_rm = []
+        node_pos = self.cnct_G.nodes[node]["loc"]
+        for edge in out_edges:
+            nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
+            if not is_move_valid_can_blocked(self.cnct_G, move=(node_pos, nb_pos), node=node):
+                edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                pass
+                #print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
+
+
+    def rm_crit_block_edges(self, node):
+        edges_to_rm = []
+        if self.path_G.nodes[node]["move_status"] == "critical":
+            for edge in self.path_G.out_edges(node):
+                edges_to_rm.append(edge[1])
+            for edge in edges_to_rm:
+                self.path_G.remove_edge(node, edge)
+
+    def rm_invalid_perim_edges(self, node):
+        edges = self.cnct_G.out_edges(nbunch=node)
+        node_pos = self.cnct_G.nodes[node]["loc"]
+        edges_to_rm = []
+        for edge in edges:
+            nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
+            if not is_move_valid_can_blocked(self.cnct_G, move=(node_pos, nb_pos), node=node):
+                edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                pass
+                # print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
 
  
 
@@ -241,198 +307,6 @@ class ReconGraph:
         return all_paths
      
 
-    def rm_blocked_diag_edges(self, node):
-        edges = self.path_G.out_edges(nbunch=node, data="edge_dir")
-        edges_to_rm = []
-        for edge in edges:
-            if edge[2] == 'NE':
-                nb1 = [x for (_, x, d) in edges if d == 'N' ]
-                nb2 = [x for (_, x, d) in edges if d == 'E' ]
-                if nb1 and nb2:
-                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
-                        edges_to_rm.append(edge[0:2])
-                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
-                        edges_to_rm.append(edge[0:2])
-            
-            elif edge[2] == 'SE':
-                nb1 = [x for (_, x, d) in edges if d == 'S' ]
-                nb2 = [x for (_, x, d) in edges if d == 'E' ]
-                if nb1 and nb2:
-                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
-                        edges_to_rm.append(edge[0:2])
-                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
-                        edges_to_rm.append(edge[0:2])
-                
-
-            elif edge[2] == 'SW':
-                nb1 = [x for (_, x, d) in edges if d == 'S' ]
-                nb2 = [x for (_, x, d) in edges if d == 'W' ]
-                if nb1 and nb2:
-                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
-                        edges_to_rm.append(edge[0:2])
-                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
-                        edges_to_rm.append(edge[0:2])
-                
-
-            elif edge[2] == 'NW':
-                nb1 = [x for (_, x, d) in edges if d == 'N' ]
-                nb2 = [x for (_, x, d) in edges if d == 'W' ]
-                if nb1 and nb2:
-                    if self.path_G.nodes[nb1[0]]["type"] == "block" and self.path_G.nodes[nb2[0]]["type"] == "block":
-                        edges_to_rm.append(edge[0:2])
-                    if self.path_G.nodes[nb1[0]]["type"] == "perimeter" and self.path_G.nodes[nb2[0]]["type"] == "perimeter":
-                        edges_to_rm.append(edge[0:2])
-                
-
-        for edge in edges_to_rm:
-            self.path_G.remove_edge(edge[0], edge[1])
-                
-    def rm_unreachable_edges(self, node):
-        edges = self.cnct_G.out_edges(nbunch=node, data="edge_dir")
-        edges_to_rm = []
-        for edge in edges:
-            nb_type = self.cnct_G.nodes[edge[1]]["type"]
-            nb_dir = edge[2]
-            nb_status = self.cnct_G.nodes[edge[1]]["status"]
-
-            if nb_type == "perimeter" and nb_status == "target" \
-                                        and nb_dir in ['N', 'E', 'S', 'W']:
-                found = False
-                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
-                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
-                        if my_nbs_nb == node:
-                            continue
-                        for my_nbs_nbs_nb in get_orth_out_neighbours(self.cnct_G,my_nbs_nb):
-                            if my_nbs_nbs_nb == node or my_nbs_nbs_nb == my_nb:
-                                continue
-                            try:
-                                self.cnct_G.edges[node, my_nbs_nbs_nb]
-                            except:
-                                continue
-                            if (node, my_nbs_nbs_nb) == edge[0:2]:
-                                found = True
-                                break
-                        if found:
-                            break
-                    if found:
-                        break
-                
-                if not found:
-                    edges_to_rm.append(edge)
-                    
-            elif nb_type == "perimeter" and nb_status == "target"\
-                                        and nb_dir in ['NE', 'SE', 'SW', 'NW']:
-                found = False
-                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
-                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
-                        if my_nbs_nb == node:
-                            continue
-                        try:
-                            self.cnct_G.edges[node, my_nbs_nb]
-                        except:
-                            continue
-                        if (node, my_nbs_nb) == edge[0:2]:
-                            found = True
-                            break
-                    if found:
-                        break
-                
-                if not found:
-                    edges_to_rm.append(edge)
-
-            if nb_type == "perimeter" and nb_dir in ['N', 'E', 'S', 'W']:
-                found = False
-                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
-                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
-                        if my_nbs_nb == node:
-                            continue
-                        for my_nbs_nbs_nb in get_orth_out_neighbours(self.cnct_G,my_nbs_nb):
-                            if my_nbs_nbs_nb == node or my_nbs_nbs_nb == my_nb:
-                                continue
-                            try:
-                                self.cnct_G.edges[node, my_nbs_nbs_nb]
-                            except:
-                                continue
-                            if (node, my_nbs_nbs_nb) == edge[0:2]:
-                                found = True
-                                break
-                        if found:
-                            break
-                    if found:
-                        break
-                
-                if not found:
-                    edges_to_rm.append(edge)
-                    
-                
-            elif nb_type == "perimeter" and nb_dir in ['NE', 'SE', 'SW', 'NW']:
-                found = False
-                for my_nb in get_orth_out_neighbours(self.cnct_G, node):
-                    for my_nbs_nb in get_orth_out_neighbours(self.cnct_G, my_nb):
-                        if my_nbs_nb == node:
-                            continue
-                        try:
-                            self.cnct_G.edges[node, my_nbs_nb]
-                        except:
-                            continue
-                        if (node, my_nbs_nb) == edge[0:2]:
-                            found = True
-                            break
-                    if found:
-                        break
-                
-                if not found:
-                    edges_to_rm.append(edge)
-
-            
-
-        for edge in edges_to_rm:
-            try:
-                self.path_G.remove_edge(edge[0], edge[1])
-            except:
-                pass
-                #print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
-
-    def rm_illegal_block_moves(self, node):
-        out_edges = self.cnct_G.out_edges(nbunch=node)
-        edges_to_rm = []
-        node_pos = self.cnct_G.nodes[node]["loc"]
-        for edge in out_edges:
-            nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
-            if not is_move_valid_can_blocked(self.cnct_G, move=(node_pos, nb_pos), node=node):
-                edges_to_rm.append(edge)
-
-        for edge in edges_to_rm:
-            try:
-                self.path_G.remove_edge(edge[0], edge[1])
-            except:
-                pass
-                #print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
-
-
-    def rm_crit_block_edges(self, node):
-        edges_to_rm = []
-        if self.path_G.nodes[node]["move_status"] == "critical":
-            for edge in self.path_G.out_edges(node):
-                edges_to_rm.append(edge[1])
-            for edge in edges_to_rm:
-                self.path_G.remove_edge(node, edge)
-
-    def rm_invalid_perim_edges(self, node):
-        edges = self.cnct_G.out_edges(nbunch=node)
-        node_pos = self.cnct_G.nodes[node]["loc"]
-        edges_to_rm = []
-        for edge in edges:
-            nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
-            if not is_move_valid_not_blocked(self.cnct_G, move=(node_pos, nb_pos), node=node):
-                edges_to_rm.append(edge)
-
-        for edge in edges_to_rm:
-            try:
-                self.path_G.remove_edge(edge[0], edge[1])
-            except:
-                pass
-                # print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
 
     def convert_ids_to_pos(self, path: list):
         output = []
