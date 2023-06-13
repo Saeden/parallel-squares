@@ -84,13 +84,11 @@ class ReconGraph:
             if node_type == "block" and (node_status == None or node_status == "source"):
                 self.add_block_neighbours(node)
             
-            elif node_type == "perimeter" and node_status == "target":
-                self.add_target_neighbours(node)
+            # elif node_type == "perimeter" and node_status == "target":
+            #     self.add_target_neighbours(node)
 
-            elif node_type == "perimeter" and not node_status:
+            elif node_type == "perimeter":
                 self.add_perimeter_neighbours(node)
-
-
 
     def add_target_neighbours(self, node):
         node_pos: tuple[int] = node[1]["loc"]
@@ -141,19 +139,18 @@ class ReconGraph:
             node_pos = node[1]["loc"]
             nb_x = nb_pos_diff[0] + node_pos[0]
             nb_y = nb_pos_diff[1] + node_pos[1]
-            nb_type = self.world.used_cells[nb_x+1][nb_y+1]
-
+            
             num_cols = len(self.world.used_cells)
             num_rows = len(self.world.used_cells[0])
             if nb_x < -1 or nb_y < - 1 or nb_x > num_cols - 2 or nb_y >= num_rows - 2:
                 continue
-            if nb_type != -1 and self.is_move_valid(move=(node_pos, (nb_x, nb_y)), node=node[0]):
-                nb_node = get_node_frm_attr(graph=self.path_G, attr="loc", val=(nb_x, nb_y))
+
+            nb_type = self.world.used_cells[nb_x+1][nb_y+1]
+            if nb_type != -1:
+                nb_node = get_node_frm_attr(graph=self.cnct_G, attr="loc", val=(nb_x, nb_y))
                 self.cnct_G.add_edge(node[0], nb_node, edge_connected=None, edge_dir=nb_tag)
                           
 
-    def add_perimeter_edges(self):
-        raise NotImplementedError
 
  
 
@@ -191,9 +188,9 @@ class ReconGraph:
                 self.rm_blocked_diag_edges(node=node[0])
                 self.rm_unreachable_edges(node=node[0])
                 self.rm_crit_block_edges(node=node[0])
-        
+            if node[1] == "perimeter":
+                self.rm_invalid_perim_edges(node=node[0])
 
-        # self.draw_path_graph()
                 
     def find_all_paths_max(self) -> list[list]:
         all_paths = []
@@ -396,6 +393,21 @@ class ReconGraph:
             for edge in edges_to_rm:
                 self.path_G.remove_edge(node, edge)
 
+    def rm_invalid_perim_edges(self, node):
+        edges = self.cnct_G.out_edges(nbunch=node)
+        node_pos = self.cnct_G.nodes[node]["loc"]
+        edges_to_rm = []
+        for edge in edges:
+            nb_pos = self.cnct_G.nodes[edge[1]]["loc"]
+            if not is_move_valid(self.cnct_G, move=(node_pos, nb_pos), node=node):
+                edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                pass
+                # print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
 
     def convert_ids_to_pos(self, path: list):
         output = []
@@ -404,48 +416,4 @@ class ReconGraph:
 
         return output
 
-
-    def is_move_valid(self, move: tuple[tuple[int, int]], node: int) -> bool:
-        def get_nb_frm_dir(node, dir: str) -> bool:
-            all_neighbours = self.cnct_G.out_edges(node, data="edge_dir")
-            for nb in all_neighbours:
-                if type(nb[1]) == int and nb[2] == dir:
-                    return True
-            return False
-        
-        dir = (move[1][0]-move[0][0], move[1][1]-move[0][1])
-        if dir == (0, 1):    #N
-            if get_nb_frm_dir(node, 'E') and get_nb_frm_dir(node, 'NE')\
-                or get_nb_frm_dir(node,'W') and get_nb_frm_dir(node, 'NW'):
-                return True
-        elif dir == (1, 1):  #NE or EN
-            if get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'N')\
-                or get_nb_frm_dir(node,'N') and not get_nb_frm_dir(node, 'E'):
-                return True
-        elif dir == (1, 0):  #E
-            if get_nb_frm_dir(node, 'N') and get_nb_frm_dir(node, 'NE')\
-                or get_nb_frm_dir(node,'S') and get_nb_frm_dir(node, 'SE'):
-                return True
-        elif dir == (1, -1): #SE or ES
-            if get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'S')\
-                or get_nb_frm_dir(node,'S') and not get_nb_frm_dir(node, 'E'):
-                return True
-        elif dir == (0, -1): #S
-            if get_nb_frm_dir(node, 'E') and get_nb_frm_dir(node, 'SE')\
-                or get_nb_frm_dir(node,'W') and get_nb_frm_dir(node, 'SW'):
-                return True
-        elif dir == (-1, -1):#SW or WS
-            if get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'S')\
-                or get_nb_frm_dir(node,'S') and not get_nb_frm_dir(node, 'W'):
-                return True
-        elif dir == (-1, 0): #W
-            if get_nb_frm_dir(node, 'N') and get_nb_frm_dir(node, 'NW')\
-                or get_nb_frm_dir(node,'S') and get_nb_frm_dir(node, 'SW'):
-                return True
-        elif dir == (-1, 1): #NW or WN
-            if get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'N')\
-                or get_nb_frm_dir(node,'N') and not get_nb_frm_dir(node, 'W'):
-                return True
-        else:
-            return False
 

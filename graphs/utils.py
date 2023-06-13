@@ -112,3 +112,48 @@ def direction(frm: tuple[int, int], to: tuple[int, int]) -> str:
         return 'NW'
     else:
         raise Exception("Tried to move more than one block.")
+    
+def is_move_valid(graph: nx.DiGraph, move: tuple[tuple[int, int]], node: int) -> bool:
+        def get_nb_frm_dir(node, dir: str) -> bool:
+            all_neighbours = graph.out_edges(node, data="edge_dir")
+            for nb in all_neighbours:
+                if type(nb[1]) == int and nb[2] == dir:
+                    return True
+            return False
+        
+        dir = (move[1][0]-move[0][0], move[1][1]-move[0][1])
+        if dir == (0, 1):    #N
+            if get_nb_frm_dir(node, 'E') and get_nb_frm_dir(node, 'NE')\
+                or get_nb_frm_dir(node,'W') and get_nb_frm_dir(node, 'NW'):
+                return True
+        elif dir == (1, 1):  #NE or EN
+            if get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'N') and not get_nb_frm_dir(node, 'NE')\
+                or get_nb_frm_dir(node,'N') and not get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'NE'):
+                return True
+        elif dir == (1, 0):  #E
+            if get_nb_frm_dir(node, 'N') and get_nb_frm_dir(node, 'NE')\
+                or get_nb_frm_dir(node,'S') and get_nb_frm_dir(node, 'SE'):
+                return True
+        elif dir == (1, -1): #SE or ES
+            if get_nb_frm_dir(node, 'E') and not get_nb_frm_dir(node, 'S') and not get_nb_frm_dir(node, 'SE')\
+                or get_nb_frm_dir(node,'S') and not get_nb_frm_dir(node, 'E')and not get_nb_frm_dir(node, 'SE'):
+                return True
+        elif dir == (0, -1): #S
+            if get_nb_frm_dir(node, 'E') and get_nb_frm_dir(node, 'SE')\
+                or get_nb_frm_dir(node,'W') and get_nb_frm_dir(node, 'SW'):
+                return True
+        elif dir == (-1, -1):#SW or WS
+            if get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'S') and not get_nb_frm_dir(node, 'SW')\
+                or get_nb_frm_dir(node,'S') and not get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'SW'):
+                return True
+        elif dir == (-1, 0): #W
+            if get_nb_frm_dir(node, 'N') and get_nb_frm_dir(node, 'NW')\
+                or get_nb_frm_dir(node,'S') and get_nb_frm_dir(node, 'SW'):
+                return True
+        elif dir == (-1, 1): #NW or WN
+            if get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'N') and not get_nb_frm_dir(node, 'NW')\
+                or get_nb_frm_dir(node,'N') and not get_nb_frm_dir(node, 'W') and not get_nb_frm_dir(node, 'NW'):
+                return True
+        else:
+            return False
+        
