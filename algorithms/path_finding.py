@@ -38,7 +38,7 @@ def find_max_path(world, rc_graph: ReconGraph):
     #draw_all_paths(rc_graph, all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
-    all_paths = sorted(all_paths, key=len, reverse=True)
+    all_paths = sorted(all_paths, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
     path = all_paths[0]
     pos_path = rc_graph.convert_ids_to_pos(path)
     while (not check_path_connectivity(graph=rc_graph, world=world, path=pos_path, path_ids=path)):
