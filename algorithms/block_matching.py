@@ -1,5 +1,6 @@
 from model.world import *
 from graphs.matched import MatchGraph
+from graphs.drawing import draw_match_labels
 
 
 def matching_monotone(world: World) -> World:
@@ -12,7 +13,7 @@ def matching_monotone(world: World) -> World:
     move_num = 0
     for island in matching:
         # make legal moves in each island, we need to order the island such that the move order does not create hanging blocks
-        island = order_island(island)
+        # island = order_island(island)
         for matched_blocks in island:
             source = matched_blocks[0]
             target = matched_blocks[1]
@@ -72,63 +73,72 @@ def fill_boundary(world: World, exec: bool) -> World:
     return world
 
 def make_matching(world: World) -> list[list]:
-    source_blocks: list = [block for block in world.configuration.blocks if block is not None and block.status == "source"]
-    target_blocks: list = world.target_list
-
-    source_blocks = sorted(source_blocks, key=lambda block: (block.p[0], -block.p[1]))
-    target_blocks = sorted(target_blocks, key= lambda block: (-block.p[1], -block.p[0]))
-
-
     matching_lst = []
     islands = []
-    stack = []
-    for ind, src_block in enumerate(source_blocks):
-        # if the x value of the next item in the source block list is smaller than the x value of the next item in the 
-        # target cell list then we know there is a source block between the current source block and the next target cell
-        # so put the current source block on the stack 
-        if ind+1<len(source_blocks) and source_blocks[ind+1].p[0] < target_blocks[0].p[0]:
-            stack.append(src_block)
-        # else we have found the first matching
-        else:
-            stack.append(src_block)
-            # leaving this in because I am a code hoarder
-            #  or
-            # first_log_var = target_blocks[0].p[0] < source_blocks[ind+1].p[0]
-            # second_log_var = not target_blocks[len(stack)-1].p[0] < source_blocks[ind].p[0]
-            while(ind+1==len(source_blocks) or target_blocks[0].p[0] < source_blocks[ind+1].p[0] and \
-                  not target_blocks[len(stack)-1].p[0] < source_blocks[ind].p[0] and stack):
-                for_print = (stack[-1], target_blocks[0])
-                matched_blocks = (stack[-1].p, target_blocks[0].p)
-                del target_blocks[0]
-                del stack[-1]
-                print(f"Source block; ID:{for_print[0].id}, pos: {for_print[0].p} | Target block; ID:{for_print[1].id}, pos: {for_print[1].p}")
-                matching_lst.append(matched_blocks)
-                if not stack:
+    col_stack = []
+    row_stack = []
+
+    max_num_matches = len(world.target_list)
+    num_matches = 0
+
+    max_x = len(world.used_cells)
+    max_y = len(world.used_cells[0])
+
+    found_pos = {}
+    for x in range(max_x):
+        if num_matches == max_num_matches:
+            break
+        for y in reversed(range(max_y)):
+            try:
+                found = found_pos[(x-1, y-1)]
+            except:
+                found = False
+
+            current_cell = world.used_cells[x][y]
+            cell_type: str or None = world.get_cell_type(x=x, y=y, id=current_cell)
+            if not cell_type or found:
+                continue
+            elif not col_stack or col_stack[-1][2] == cell_type:
+                col_stack.append((x-1, y-1, cell_type))
+            elif col_stack[-1][2] != cell_type:
+                temp_x = x
+                while cell_type != None:
+                    row_stack.append((temp_x-1, y-1, cell_type))
+                    found_pos[(temp_x-1, y-1)] = True
+                    temp_x += 1
+                    current_cell = world.used_cells[temp_x][y]
+                    cell_type: str or None = world.get_cell_type(x=temp_x, y=y, id=current_cell)
+                while row_stack:
+                    if row_stack[-1][2] == "source":
+                        source_item = row_stack[0][:2]
+                        target_item = col_stack[-1][:2]
+                        print(f"Source block; pos: {source_item} | Target block; pos: {target_item}")
+                        matching_lst.append((source_item, target_item, "left"))
+                        num_matches += 1
+                        del row_stack[0]
+                        del col_stack[-1]
+                    elif row_stack[-1][2] == "target":
+                        source_item = col_stack[-1][:2]
+                        target_item = row_stack[-1][:2]
+                        print(f"Source block; pos: {source_item} | Target block; pos: {target_item}")
+                        matching_lst.append((source_item, target_item, "right"))
+                        num_matches += 1
+                        del row_stack[-1]
+                        del col_stack[-1]
+                if not col_stack:
                     islands.append(matching_lst)
                     matching_lst = []
-                if not target_blocks:
-                    break
-        
-        
+                    if num_matches == max_num_matches:
+                        break
+  
+            found_pos[(x-1, y-1)] = True
     graph = MatchGraph(world=world)
     graph.add_match_labels(islands)
-    graph.draw_match_labels()
+    draw_match_labels(graph)
 
     return islands
 
-def order_island(island: list[tuple]) -> list[tuple]:
-    output = []
-    if len(island) == 1:
-        return island
-    
-    for matched_blocks in island:
-        source = matched_blocks[0]
-        target = matched_blocks[1]
-        if source[0]<target[0]:
-            # this match is right flowing
-            pass
 
-    return output
 
 def execute_convex_trans(source: Block, to: tuple[int], world: World):
     world.move_block_to(source, to=to)

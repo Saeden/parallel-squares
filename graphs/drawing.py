@@ -56,11 +56,11 @@ def draw_all_paths_and_move_colors(graph, paths: list):
         nx.draw_networkx_edges(graph.path_G,pos=pos,edgelist=edgelist,edge_color = colors[ctr%3], width=linewidths[ctr%3])
     plt.show() 
 
-def draw_match_labels(self):
-    pos = nx.get_node_attributes(self.match_G, 'loc')
-    node_color = nx.get_node_attributes(self.match_G, 'color')
-    labels = nx.get_node_attributes(self.match_G, 'match_ID')
-    nx.draw_networkx_nodes(self.match_G,pos=pos, node_color=node_color.values())
-    nx.draw_networkx_labels(self.match_G,pos=pos, labels=labels, font_color="whitesmoke")
-    nx.draw_networkx_edges(self.match_G, pos=pos, edgelist=self.match_G.edges, edge_color = "black", width=1)
+def draw_match_labels(graph):
+    pos = nx.get_node_attributes(graph.match_G, 'loc')
+    node_color = nx.get_node_attributes(graph.match_G, 'color')
+    labels = nx.get_node_attributes(graph.match_G, 'match_ID')
+    nx.draw_networkx_nodes(graph.match_G,pos=pos, node_color=node_color.values())
+    nx.draw_networkx_labels(graph.match_G,pos=pos, labels=labels, font_color="whitesmoke")
+    nx.draw_networkx_edges(graph.match_G, pos=pos, edgelist=graph.match_G.edges, edge_color = "black", width=1)
     plt.show()

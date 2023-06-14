@@ -102,7 +102,18 @@ class World:
                 #     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                 #     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
 
-            
+    def get_cell_type(self, x:int, y:int, id: int) -> str or None:
+        current_cell = self.used_cells[x][y]
+        if current_cell == -3:
+            return "target"
+        block = self.configuration.get_block_id(id=id)
+        if not block:
+            return None
+        if block.status == "source":
+            return "source"
+        else:
+            return None
+        
 
 
     def move_block_to(self, block: Block, to: tuple[int, int]):
