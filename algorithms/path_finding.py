@@ -23,7 +23,8 @@ def transform_xy_monot(world: World):
         # rc_graph.draw_path_graph()
        
         # choose the longest path that doesn't disconnect the configuration
-        draw_all_paths(rc_graph, [path])
+        if move_num > 20:
+            draw_all_paths(rc_graph, [path])
         # rc_graph.draw_all_paths_and_move_colors([path])
         world.execute_path(pos_path)
         print(f"\nThe current number of moves that have been made is {move_num}\n")
@@ -35,7 +36,7 @@ def transform_xy_monot(world: World):
 
 def find_max_path(world, rc_graph: ReconGraph):
     all_paths = rc_graph.find_all_paths_max()
-    #draw_all_paths(rc_graph, all_paths)
+    # draw_all_paths(rc_graph, all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
     all_paths = sorted(all_paths, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)

@@ -271,7 +271,7 @@ class ReconGraph:
                     # print(f"No path between {src_block} and {target_block}. Moving to next pair...")
                     pass
             try:
-                all_paths.append(max(paths_to_targets, key=len))
+                all_paths.append(max(paths_to_targets, key=lambda lst: sum(isinstance(item, int) for item in lst)))
             except:
                 # print(f"No path between {src_block} and any target block.")
                 pass

@@ -2,6 +2,8 @@ import networkx as nx
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use('gtk3agg')
+from graphs.matched import MatchGraph
+from graphs.reconfiguration import ReconGraph
 
 
 def draw_normal_colors(graph: nx.DiGraph):
@@ -63,4 +65,15 @@ def draw_match_labels(graph):
     nx.draw_networkx_nodes(graph.match_G,pos=pos, node_color=node_color.values())
     nx.draw_networkx_labels(graph.match_G,pos=pos, labels=labels, font_color="whitesmoke")
     nx.draw_networkx_edges(graph.match_G, pos=pos, edgelist=graph.match_G.edges, edge_color = "black", width=1)
+    plt.show()
+
+def draw_convex_transition(graph: MatchGraph, edge=tuple[tuple[int]]):
+    edge = [edge]
+    pos = nx.get_node_attributes(graph.match_G, 'loc')
+    node_color = nx.get_node_attributes(graph.match_G, 'move_color')
+    nx.draw_networkx_nodes(graph.match_G,pos=pos, node_color=node_color.values())
+    nx.draw_networkx_labels(graph.match_G,pos=pos, font_color="white")
+    nx.draw_networkx_edges(graph.match_G, pos=pos, edgelist=graph.match_G.edges, edge_color = "black", width=1)
+    
+    nx.draw_networkx_edges(graph.match_G,pos=pos,edgelist=edge,edge_color = "red", width=3)
     plt.show()

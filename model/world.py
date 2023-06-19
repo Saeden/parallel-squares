@@ -114,7 +114,25 @@ class World:
         else:
             return None
         
+    def get_highest_block_row(self, row:int):
+        index = -1
+        block_id = self.used_cells[index][row+1]
+        while block_id < 0:
+            index -= 1
+            block_id = self.used_cells[index][row+1]
 
+        block = self.configuration.get_block_id(block_id)
+        return block.p
+    
+    def get_highest_block_col(self, col:int):
+        index = -1
+        block_id = self.used_cells[col+1][index]
+        while block_id < 0:
+            index -= 1
+            block_id = self.used_cells[col+1][index]
+
+        block = self.configuration.get_block_id(block_id)
+        return block.p
 
     def move_block_to(self, block: Block, to: tuple[int, int]):
         if self.is_valid(block, to):

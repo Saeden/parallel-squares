@@ -45,25 +45,25 @@ def main():
     # start: Configuration = shapes.strip(axis=1, size=40)
     # target: Configuration = shapes.strip(axis=0, size=40)
 
-    # # Rectangle 1 - tall to flat rectangle, no loose block
-    # start: Configuration = shapes.rectangle(5, 10)
-    # target: Configuration = shapes.rectangle(10, 5)
+    # Rectangle 1 - tall to flat rectangle, no loose block
+    start: Configuration = shapes.rectangle(5, 10)
+    target: Configuration = shapes.rectangle(10, 5)
 
     # # hard coded specific example 1 ONLY right flow | 2 islands
     # start: Configuration = shapes.specific_example1(start=True)
     # target: Configuration = shapes.specific_example1(start=False)
 
-    # # hard coded specific example 2
+    # # hard coded specific example 2 | 3 islands
     # start: Configuration = shapes.specific_example2(start=True)
     # target: Configuration = shapes.specific_example2(start=False)
 
-    # # hard coded specific example 3 ONLY right flow | 1 island
+    # # hard coded specific example 3 ONLY left flow | 1 island
     # start: Configuration = shapes.specific_example3(start=True)
     # target: Configuration = shapes.specific_example3(start=False)
     
-    # # hard coded specific example 4 MIXED flow | 1 island
-    start: Configuration = shapes.left_flow_complicated(start=True)
-    target: Configuration = shapes.left_flow_complicated(start=False)
+    # # hard coded specific example 4 left flow | 1 island
+    # start: Configuration = shapes.left_flow_complicated(start=True)
+    # target: Configuration = shapes.left_flow_complicated(start=False)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
     max_y: int = max((start.boundary[1], target.boundary[1]))
@@ -100,11 +100,11 @@ def main():
     # target_world.print_world()
     # print()
 
-    # print("\nRun the algorithm: ")
-    # world = transform_xy_monot(world)
+    print("\nRun the algorithm: ")
+    world = transform_xy_monot(world)
 
-    print("Make a matching...")
-    world =  matching_monotone(world) 
+    # print("Make a matching...")
+    # world =  matching_monotone(world) 
 
 
 if __name__ == "__main__":
