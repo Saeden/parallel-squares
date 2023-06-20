@@ -84,7 +84,7 @@ def edge_length(G: nx.DiGraph, node1, node2) -> int:
     type2 = G.nodes[node2]["type"]
     status2 = G.nodes[node2]["status"]
 
-    if type1 == "perimeter" and type2 == "perimeter" and not status1 and not status2:
+    if type1 == "perimeter" and type2 == "perimeter":
         return 3
     elif type1 == "block" and type2 == "perimeter":
         return 2
@@ -200,3 +200,22 @@ def is_move_valid_can_blocked(graph: nx.DiGraph, move: tuple[tuple[int, int]], n
                 return True
         else:
             return False
+        
+def is_pathless_subgraph_connected(graph: nx.DiGraph, world_blocks, path_ids):
+    blocks = {block.id:True for block in world_blocks if block}
+    for block in path_ids:
+        if type(block) == int:
+            blocks[block] = False
+
+    def filter_node(node):
+        try:
+            return blocks[node]
+        except:
+            return False
+    
+    def filter_edge(node1, node2):
+        return graph[node1][node2].get("edge_connected", True)
+    
+    pathless_subgraph = nx.subgraph_view(graph, filter_node=filter_node, filter_edge=filter_edge)
+    return nx.is_weakly_connected(pathless_subgraph)
+    

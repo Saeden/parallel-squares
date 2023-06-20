@@ -2,6 +2,7 @@ import networkx as nx
 from model.world import World
 from graphs.utils import *
 from model.block import Block
+from drawing import draw_path_graph
 
 
 class ReconGraph:
@@ -271,13 +272,16 @@ class ReconGraph:
                     # print(f"No path between {src_block} and {target_block}. Moving to next pair...")
                     pass
             try:
-                all_paths.append(max(paths_to_targets, key=lambda lst: sum(isinstance(item, int) for item in lst)))
+                sorted_paths_to_targets = sorted(paths_to_targets, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
+                while not is_pathless_subgraph_connected(self.cnct_G, self.world.configuration.blocks, sorted_paths_to_targets[0]):
+                    del sorted_paths_to_targets[0]
+                all_paths.append(sorted_paths_to_targets[0])
             except:
                 # print(f"No path between {src_block} and any target block.")
                 pass
                 
         if not all_paths:
-            self.draw_path_graph()
+            draw_path_graph()
             raise ValueError("There are no paths from any source block to any target block.")
 
         return all_paths
