@@ -2,7 +2,7 @@ import networkx as nx
 from model.world import World
 from graphs.utils import *
 from model.block import Block
-from drawing import draw_path_graph
+from graphs.drawing import draw_path_graph
 
 
 class ReconGraph:
@@ -21,7 +21,6 @@ class ReconGraph:
         self.make_path_graph()
         
         
-
 
     def add_nodes(self):
         perimeterID = 0
@@ -219,7 +218,63 @@ class ReconGraph:
                 pass
                 # print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
 
- 
+    def rm_split_pair_edge(self):
+        edges_to_rm = []
+        
+        for edge in self.path_G.edges:
+            def filter_node(node):
+                if node in edge:
+                    return False
+                elif type(node) == int:
+                    return True
+                else:
+                    return False
+        
+            def filter_edge(node1, node2):
+                return self.cnct_G[node1][node2].get("edge_connected", True)
+            
+            subgraph = nx.subgraph_view(self.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+            if not nx.is_weakly_connected(subgraph):
+                edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                pass
+                # print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
+
+    def rm_created_cut_block_edge(self):
+        edges_to_rm = []
+        cut_blocks = list(nx.articulation_points(self.path_G.to_undirected()))
+        for edge in self.path_G.edges:
+            if type(edge[0]) != int:
+                continue
+
+            def filter_node(node):
+                if node == edge[1]:
+                    return True
+                elif node == edge[0]:
+                    return False
+                elif type(node) == int:
+                    return True
+                else:
+                    return False
+        
+            def filter_edge(node1, node2):
+                return self.cnct_G[node1][node2].get("edge_connected", True)
+            
+            subgraph = nx.subgraph_view(self.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+            cut_blocks_after_move = list(nx.articulation_points(subgraph.to_undirected()))
+            if len(cut_blocks_after_move) > len(cut_blocks):
+                edges_to_rm.append(edge)
+
+        for edge in edges_to_rm:
+            try:
+                self.path_G.remove_edge(edge[0], edge[1])
+            except:
+                pass
+                # print(f"Apparently edge {edge} is not in the graph, even though that should be impossible....")
 
     def mark_blocks(self):
         for node in self.cnct_G.nodes.data("type"):
@@ -259,8 +314,12 @@ class ReconGraph:
             if node[1] == "perimeter":
                 self.rm_invalid_perim_edges(node=node[0])
 
+        self.rm_split_pair_edge()
+        # self.rm_created_cut_block_edge()
+
+
                 
-    def find_all_paths_max(self) -> list[list]:
+    def find_all_paths_max(self, strictly_connected: bool) -> list[list]:
         all_paths = []
         for src_block in self.src_blocks:
             paths_to_targets = []
@@ -273,15 +332,16 @@ class ReconGraph:
                     pass
             try:
                 sorted_paths_to_targets = sorted(paths_to_targets, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
-                while not is_pathless_subgraph_connected(self.cnct_G, self.world.configuration.blocks, sorted_paths_to_targets[0]):
-                    del sorted_paths_to_targets[0]
+                if strictly_connected:
+                    while not is_pathless_subgraph_connected(self.cnct_G, self.world.configuration.blocks, sorted_paths_to_targets[0]):
+                        del sorted_paths_to_targets[0]
                 all_paths.append(sorted_paths_to_targets[0])
             except:
                 # print(f"No path between {src_block} and any target block.")
                 pass
                 
         if not all_paths:
-            draw_path_graph()
+            draw_path_graph(graph=self)
             raise ValueError("There are no paths from any source block to any target block.")
 
         return all_paths

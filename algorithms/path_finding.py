@@ -6,37 +6,46 @@ from graphs.utils import is_move_valid_can_blocked, is_move_valid_not_blocked
 
 def transform_xy_monot(world: World):
     rc_graph = ReconGraph(world=world)
-
     move_num = 1
     while rc_graph.src_blocks:
-        pos_path, path = find_max_path(world, rc_graph)
-        if not pos_path:
-            pos_path = find_split_path_max(world, rc_graph)
-        if not pos_path:
+        # draw_path_graph(rc_graph)
+        split_path_pos, split_path = find_split_path_max(world, rc_graph)
+        max_path_pos, max_path = find_max_path(world, rc_graph)
+        if not max_path_pos and not split_path_pos:
             pos_path, path = find_min_path(world, rc_graph)
-        if not pos_path:
-            all_paths = rc_graph.find_all_paths_max() + rc_graph.find_all_paths_min()
-            draw_all_paths_and_move_colors(rc_graph, all_paths)
-            raise ValueError("There are no connected paths :(")
+            if not pos_path:
+                all_paths = rc_graph.find_all_paths_max() + rc_graph.find_all_paths_min()
+                draw_all_paths_and_move_colors(rc_graph, all_paths)
+                raise ValueError("There are no connected paths :(")
 
+        num_blocks_max_path = sum(isinstance(item, int) for item in max_path)
+        num_blocks_split_path = sum([sublist.count(item) for sublist in split_path for item in sublist if isinstance(item, int)])
+        if num_blocks_max_path >= num_blocks_split_path:
+            pos_path = max_path_pos
+            world.execute_path(pos_path)
+            print(f"\nThe current number of moves that have been made is {move_num}\n")
+            world.print_world()
+            move_num += 1
+            # draw_all_paths(rc_graph, [max_path])
+        else:
+            # draw_all_paths(rc_graph, split_path)
+            for pos_path in split_path_pos:
+                world.execute_path(pos_path)
+                print(f"\nThe current number of moves that have been made is {move_num}\n")
+                world.print_world()
+                move_num += 1
+            
         # rc_graph.draw_move_colors()
         # rc_graph.draw_path_graph()
-       
-        # choose the longest path that doesn't disconnect the configuration
-        # if move_num > 20:
-        draw_all_paths(rc_graph, [path])
+        
         # rc_graph.draw_all_paths_and_move_colors([path])
-        world.execute_path(pos_path)
-        print(f"\nThe current number of moves that have been made is {move_num}\n")
-        world.print_world()
-        move_num += 1
         rc_graph = ReconGraph(world=world)
     
     draw_path_graph(rc_graph)
 
 def find_max_path(world, rc_graph: ReconGraph):
-    all_paths = rc_graph.find_all_paths_max()
-    draw_all_paths(rc_graph, all_paths)
+    all_paths = rc_graph.find_all_paths_max(strictly_connected=True)
+    #draw_all_paths(rc_graph, all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
     all_paths = sorted(all_paths, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
@@ -76,28 +85,26 @@ def find_min_path(world, rc_graph):
 
 
 
-def find_split_path_max(world, rc_graph):
-    all_paths = rc_graph.find_all_paths_max()
-    # rc_graph.draw_all_paths(all_paths)
+def find_split_path_max(world, rc_graph: ReconGraph):
+    all_paths = rc_graph.find_all_paths_max(strictly_connected=False)
+    draw_all_paths(graph=rc_graph, paths=all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
-    all_paths = sorted(all_paths, key=len, reverse=True)
-    # path = all_paths[0]
-    # pos_path = rc_graph.convert_ids_to_pos(path)
-    # i = 0
+    all_paths = sorted(all_paths, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
     path = all_paths[i]
     pos_path = rc_graph.convert_ids_to_pos(path)
-    split_path_pos, split_path =  split_path_check(graph=rc_graph, world=world, path=pos_path, path_ids=path)
-    # while not split_path:
-    #     i+=1
-    #     if i == len(all_paths):
-    #             # rc_graph.draw_all_paths(all_paths)
-    #         rc_graph.draw_all_paths_and_move_colors(all_paths)
-    #         raise ValueError("There are no connected paths :(")
-    #     path = all_paths[i]
-    #     pos_path = rc_graph.convert_ids_to_pos(path)
-    draw_all_paths(rc_graph, [split_path])
-    return split_path_pos
+    cnct_path, discnct_path =  split_path_check(graph=rc_graph, world=world, path=pos_path, path_ids=path)
+    output = [cnct_path[0]]
+    output_ids = [cnct_path[1]]
+    while discnct_path[0]:
+        cnct_path, discnct_path = split_path_check(graph=rc_graph, world=world, path=discnct_path[0], path_ids=discnct_path[1])
+        output += [cnct_path[0]]
+        output_ids += [cnct_path[1]]
+
+    
+    draw_all_paths(rc_graph, output_ids)
+
+    return output, output_ids
 
 def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_ids: list) -> bool:
     path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
@@ -134,9 +141,9 @@ def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list
     path_edges = reversed([(path[n],path[n+1]) for n in range(len(path)-1)])
     edge_ids = [(path_ids[n],path_ids[n+1]) for n in range(len(path_ids)-1)]
     blocks = {block.id:True for block in world.configuration.blocks if block}
-    for block in path_ids:
-        if type(block) == int:
-            blocks[block] = False
+    # for block in path_ids:
+    #     if type(block) == int:
+    #         blocks[block] = False
 
 
     def filter_node(node):
@@ -151,15 +158,25 @@ def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list
     for ind, edge in enumerate(path_edges):
         block = world.configuration.get_block_p(edge[0])
         if block:
-            blocks[edge_ids[(-ind)-1][1]] = True
+            blocks[edge_ids[(-ind)-1][0]] = False
+            # blocks[edge_ids[(-ind)-1][1]] = True
             only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
-            if not is_move_valid_not_blocked(graph=graph.cnct_G, move=edge, node=edge_ids[(-ind)-1][0]):
-                return path[(-ind)-1:], path_ids[(-ind):]
+            if not is_move_valid_can_blocked(graph=graph.cnct_G, move=edge, node=edge_ids[(-ind)-1][0]):
+                connected_split = path[(-ind)-1:]
+                connected_split_ids = path_ids[(-ind)-1:]
+                discnct_split = path[:(-ind)]
+                discnct_split_ids = path_ids[:(-ind)]
+                return (connected_split, connected_split_ids), (discnct_split, discnct_split_ids)
             if not is_weakly_connected(only_blocks_view):
-                return path[(-ind)-1:], path_ids[(-ind):]
-            blocks[edge_ids[(-ind)-1][1]] = False
+                connected_split = path[(-ind)-1:]
+                connected_split_ids = path_ids[(-ind)-1:]
+                discnct_split = path[:(-ind)]
+                discnct_split_ids = path_ids[:(-ind)]
+                return (connected_split, connected_split_ids), (discnct_split, discnct_split_ids)
+            # blocks[edge_ids[(-ind)-1][0]] = False
+            # blocks[edge_ids[(-ind)-1][1]] = False
            
-    return path
+    return (path, path_ids), ([],[])
 
 
 def mark_finished_blocks(start: World, target: Configuration):
