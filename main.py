@@ -1,13 +1,9 @@
-import shapes
-from world import *
-from algorithms import transform_xy_monot, mark_finished_blocks
-from GT_graph import reconfig_graph
-#import matplotlib
-#matplotlib.use('gtk3agg')
+import shapes.shapes as shapes
+from model.world import *
+from algorithms.path_finding import transform_xy_monot, mark_finished_blocks
+from algorithms.block_matching import matching_monotone
 from graph_tool.all import *
-
-import networkx as nx
-from NX_graph import ReconGraph
+from graphs.reconfiguration import ReconGraph
 
 
 
@@ -18,6 +14,7 @@ def main():
     # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=12, seed=1)
 
+    # # This example is now hard coded in example 2
     # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=20, seed=19)
     # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # target: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=20, seed=1)
@@ -30,12 +27,12 @@ def main():
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=20, seed=1)
 
-    # Example D in [[Transforming one xy-monotone shape to another]]
+    # # #Example D in [[Transforming one xy-monotone shape to another]]
     # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=10, seed=1)
 
-    # Bigger example
+    # # Bigger example
     # start: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=9)
     # out_start: Configuration = shapes.xy_monotone(max_x=10, max_y=10, max_vol=10, seed=5)
     # target: Configuration = shapes.xy_monotone(max_x=50, max_y=50, max_vol=100, seed=1)
@@ -52,6 +49,21 @@ def main():
     start: Configuration = shapes.rectangle(5, 10)
     target: Configuration = shapes.rectangle(10, 5)
 
+    # # hard coded specific example 1 ONLY right flow | 2 islands
+    # start: Configuration = shapes.specific_example1(start=True)
+    # target: Configuration = shapes.specific_example1(start=False)
+
+    # # hard coded specific example 2 | 3 islands
+    # start: Configuration = shapes.specific_example2(start=True)
+    # target: Configuration = shapes.specific_example2(start=False)
+
+    # # hard coded specific example 3 ONLY left flow | 1 island
+    # start: Configuration = shapes.specific_example3(start=True)
+    # target: Configuration = shapes.specific_example3(start=False)
+    
+    # # hard coded specific example 4 left flow | 1 island
+    # start: Configuration = shapes.left_flow_complicated(start=True)
+    # target: Configuration = shapes.left_flow_complicated(start=False)
 
     max_x: int = max((start.boundary[0], target.boundary[0]))
     max_y: int = max((start.boundary[1], target.boundary[1]))
@@ -91,7 +103,8 @@ def main():
     print("\nRun the algorithm: ")
     world = transform_xy_monot(world)
 
-    
+    # print("Make a matching...")
+    # world =  matching_monotone(world) 
 
 
 if __name__ == "__main__":

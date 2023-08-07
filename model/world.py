@@ -1,184 +1,7 @@
 import numpy as np
 from termcolor import colored
-
-# This is a container class for the blocks/modules in the configuration, it contains the current location of the block in the world 
-# (p for point), the id of the block which is an integer label, a list of the blocks it is connected to (neighbours) 
-# and finally the the status which shows whether the block is intending to be part of the backbone during the next tick or will start 
-# to move during that tick
-class Block:
-    def __init__(self, p: tuple[int, int], id: int):
-        self.p = p
-        self.id = id
-        self.status: str = 'source'                         # status is in ['source', 'block', 'target']
-        self.neighbours: dict[Block] = {'N': None, 'NE': None, 'E': None, 'SE': None, \
-                                        'S': None, 'SW': None, 'W': None, 'NW': None}
-        self.intention: str = ''                                # intention is in ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', '']
-
-    def degree(self):
-        out = 0
-        for nb in ['N', 'E', 'S', 'W']:
-            if self.neighbours[nb]:
-                out += 1
-        return out
-
-    
-    # When the block moves it must set itself to None in the neighbour lists of its neighbours. 
-    # So when block B1 has neighbour B2 in 'N' we must set the 'S' neighbour of B2 to None.
-    def rm_neighbours(self):
-        for nb in ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']:
-            neighbour = self.neighbours[nb]
-            if neighbour:
-                neighbour.rm_opposite(loc=nb)
-                self.neighbours[nb] = None
-
-    def rm_opposite(self, loc: str):
-        if loc == 'N':
-            self.neighbours['S'] = None
-        elif loc == 'NE':
-            self.neighbours['SW'] = None
-        elif loc == 'E':
-            self.neighbours['W'] = None
-        elif loc == 'SE':
-            self.neighbours['NW'] = None
-        elif loc == 'S':
-            self.neighbours['N'] = None
-        elif loc == 'SW':
-            self.neighbours['NE'] = None
-        elif loc == 'W':
-            self.neighbours['E'] = None
-        elif loc == 'NW':
-            self.neighbours['SE'] = None
-
-
-
-
-def dir(frm: tuple[int, int], to: tuple[int, int]) -> str:
-    direction = (to[0]-frm[0], to[1]-frm[1])
-    if direction == (0, 1):
-        return 'N'
-    if direction == (1, 1):
-        return 'NE'
-    if direction == (1, 0):
-        return 'E'
-    if direction == (1, -1):
-        return 'SE'
-    if direction == (0, -1):
-        return 'S'
-    if direction == (-1, -1):
-        return 'SW'
-    if direction == (-1, 0):
-        return 'W'
-    if direction == (-1, 1):
-        return 'NW'
-    else:
-        raise Exception("Tried to move more than one block.")
-
-# A glorified list of Blocks, which contains the the size of the boundary square of the configuration
-class Configuration:
-    def __init__(self, boundary: tuple[int, int] = (None, None)):
-        self.blocks: np.array = np.empty(shape=boundary[1]*boundary[0], dtype=object)
-        #self.blocks: list[Block] = []
-        self.boundary: tuple[int, int] = boundary
-
-    def add(self, block: Block) -> None:
-        #cur_id = len(self.blocks)
-        self.blocks[block.id] = block
-
-        #self.blocks.append(block)
-
-    def add_target(self, target: Block) -> None:
-        end = len(self.blocks) - 1
-        while(self.blocks[end]):
-            end -= 1
-        self.blocks[end] = target
-        target.id = end
-
-    def add_list(self, blocks: list) -> None:
-        for block in blocks:
-            self.add(block)
-    
-    def remove(self, block: Block) -> None:
-        block.rm_neighbours()
-        # self.blocks[block.id] = None
-        # np.delete(self.blocks, block.id)
-
-    # return a block given an ID
-    # NB. the id is the index of the block in the blocks array
-    def get_block_id(self, id: int) -> Block:
-        return self.blocks[id]
-        # for block in self.blocks:
-        #     if block.id == id:
-        #         return block
-        # return None
-    
-    def get_block_p(self, p: tuple[int, int]) -> Block:
-        for block in self.blocks:
-            if not block:
-                continue
-            if block.p == p:
-                return block
-        return None
-
-    def get_neighbours(self, block: Block) -> None:
-        north = self.get_block_p((block.p[0], block.p[1] + 1))
-        if north:
-            block.neighbours['N'] = north
-            north.neighbours['S'] = block
-        else:
-            block.neighbours['N'] = None
-
-        north_east = self.get_block_p((block.p[0] + 1, block.p[1] + 1))
-        if north_east:
-            block.neighbours['NE'] = north_east
-            north_east.neighbours['SW'] = block
-        else:
-            block.neighbours['NE'] = None
-
-        east = self.get_block_p((block.p[0] + 1, block.p[1]))
-        if east:
-            block.neighbours['E'] = east
-            east.neighbours['W'] = block
-        else:
-            block.neighbours['E'] = None
-
-        south_east = self.get_block_p((block.p[0] + 1, block.p[1] - 1))
-        if south_east:
-            block.neighbours['SE'] = south_east
-            south_east.neighbours['NW'] = block
-        else:
-            block.neighbours['SE'] = None
-
-        south = self.get_block_p((block.p[0], block.p[1] - 1))
-        if south:
-            block.neighbours['S'] = south
-            south.neighbours['N'] = block
-        else:
-            block.neighbours['S'] = None
-
-        south_west = self.get_block_p((block.p[0] - 1, block.p[1] - 1))
-        if south_west:
-            block.neighbours['SW'] = south_west
-            south_west.neighbours['NE'] = block
-        else:
-            block.neighbours['SW'] = None
-
-        west = self.get_block_p((block.p[0] - 1, block.p[1]))
-        if west:
-            block.neighbours['W'] = west
-            west.neighbours['E'] = block
-        else:
-            block.neighbours['W'] = None
-
-        north_west = self.get_block_p(((block.p[0] - 1, block.p[1] + 1)))
-        if north_west:
-            block.neighbours['NW'] = north_west
-            north_west.neighbours['SE'] = block
-        else:
-            block.neighbours['NW'] = None
-
-    
-
-
+from model.block import Block
+from model.configuration import Configuration
 
 class World:
     def __init__(self, max_x, max_y) -> None:
@@ -279,8 +102,37 @@ class World:
                 #     self.perimeter.append((block.p, (block.p[0]+p[0]-1, block.p[1]+p[1]-1)))
                 #     self.used_cells[block.p[0]+p[0]][block.p[1]+p[1]] = -2
 
-            
+    def get_cell_type(self, x:int, y:int, id: int) -> str or None:
+        current_cell = self.used_cells[x][y]
+        if current_cell == -3:
+            return "target"
+        block = self.configuration.get_block_id(id=id)
+        if not block:
+            return None
+        if block.status == "source":
+            return "source"
+        else:
+            return None
+        
+    def get_highest_block_row(self, row:int):
+        index = -1
+        block_id = self.used_cells[index][row+1]
+        while block_id < 0:
+            index -= 1
+            block_id = self.used_cells[index][row+1]
 
+        block = self.configuration.get_block_id(block_id)
+        return block.p
+    
+    def get_highest_block_col(self, col:int):
+        index = -1
+        block_id = self.used_cells[col+1][index]
+        while block_id < 0:
+            index -= 1
+            block_id = self.used_cells[col+1][index]
+
+        block = self.configuration.get_block_id(block_id)
+        return block.p
 
     def move_block_to(self, block: Block, to: tuple[int, int]):
         if self.is_valid(block, to):
@@ -366,7 +218,7 @@ class World:
 			# is then skipped, the function should return true
 			# but that works because the BFS starting at the skipped
 			# cube will not encounter any cubes)
-            # Thanks to Hakitaya et al. for this code/special case
+            # Thanks to Akitaya et al. for this code/special case
             if skip.id == 0 and self.num_blocks > 1:
                 queue = [1]
 
