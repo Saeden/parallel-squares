@@ -315,7 +315,7 @@ class ReconGraph:
                 self.rm_invalid_perim_edges(node=node[0])
 
         self.rm_split_pair_edge()
-        self.rm_created_cut_block_edge()
+        #self.rm_created_cut_block_edge()
 
 
                 
