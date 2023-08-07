@@ -29,11 +29,25 @@ def transform_xy_monot(world: World):
             # draw_all_paths(rc_graph, [max_path])
         else:
             # draw_all_paths(rc_graph, split_path)
-            for pos_path in split_path_pos:
-                world.execute_path(pos_path)
-                print(f"\nThe current number of moves that have been made is {move_num}\n")
-                world.print_world()
-                move_num += 1
+            for ind, pos_path in enumerate(split_path_pos):
+                try:
+                    world.execute_path(pos_path)
+                    print(f"\nThe current number of moves that have been made is {move_num}\n")
+                    world.print_world()
+                    move_num += 1
+                except:
+                    temp_graph = ReconGraph(world=world)
+                    graph_diff = rc_graph.path_G.edges - temp_graph.path_G.edges
+                    if graph_diff:
+                        print(f"\nThe current number of moves that have been made is {move_num}\n")
+                        move_num += 1
+                    world.add_targets()
+                    world.print_world()
+                    draw_all_paths(rc_graph, split_path[ind:])
+                    print("Tried to do something illegal while executing this path.")
+                    del temp_graph
+                    break
+                
             
         # rc_graph.draw_move_colors()
         # rc_graph.draw_path_graph()
@@ -55,7 +69,7 @@ def find_max_path(world, rc_graph: ReconGraph):
         i += 1
         if i == len(all_paths):
                 # rc_graph.draw_all_paths(all_paths)
-            print("Currently no connected paths, will now try splitting paths...")
+            print("Currently no strictly connected max paths...")
             return [[],[]]
             
         path = all_paths[i]

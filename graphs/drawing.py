@@ -21,7 +21,7 @@ def draw_move_colors(graph: nx.DiGraph):
 def draw_path_graph(graph: nx.DiGraph):
     pos = nx.get_node_attributes(graph.cnct_G, 'loc')
     node_color = nx.get_node_attributes(graph.path_G, 'color')
-    nx.draw(graph.path_G, with_labels=True, pos=pos, node_color=node_color.values())
+    nx.draw(graph.path_G, with_labels=True, pos=pos, node_color=node_color.values(), font_color="whitesmoke")
     plt.show()
 
 def draw_all_paths(graph, paths: list):
