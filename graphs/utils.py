@@ -43,13 +43,13 @@ def get_target_blocks(graph: nx.DiGraph) -> list[int]:
 def dijkstra_with_weights(G: nx.DiGraph, source, target):
     dist = {}
     prev = {}
-    prev_dir = {}
+    # prev_dir = {}
     queue = []
 
     for node in G.nodes:
         dist[node] = math.inf
         prev[node] = None
-        prev_dir[node] = None
+        # prev_dir[node] = None
         queue.append(node)
 
     dist[source] = 0
@@ -64,14 +64,17 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
 
         if n == target:
             break
+        
+        prev_dir: None or str = G.get_edge_data(prev[n], n)
+        prev_dir = prev_dir['edge_dir'] if prev_dir else None
 
-        neighbours = legal_neighbours(n, prev_dir[n], G.out_edges(n, data=True))
+        neighbours = legal_neighbours(n, prev_dir, G.out_edges(n, data=True))
         for nb, direction in neighbours:
             new_dist = dist[n] + edge_length(G, n, nb)
             if new_dist < dist[nb]:
                 dist[nb] = new_dist
                 prev[nb] = n
-                prev_dir[nb] = direction
+                # prev_dir[nb] = direction if nb else pass
 
     path = []
     node = target
