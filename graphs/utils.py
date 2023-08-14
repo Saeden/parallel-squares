@@ -1,6 +1,5 @@
 import networkx as nx
 import math
-import numpy as np
 
 def get_node_frm_attr(graph: nx.DiGraph, attr: str, val) -> int:
     for node in graph.nodes.data(attr):
@@ -43,13 +42,11 @@ def get_target_blocks(graph: nx.DiGraph) -> list[int]:
 def dijkstra_with_weights(G: nx.DiGraph, source, target):
     dist = {}
     prev = {}
-    # prev_dir = {}
     queue = []
 
     for node in G.nodes:
         dist[node] = math.inf
         prev[node] = None
-        # prev_dir[node] = None
         queue.append(node)
 
     dist[source] = 0
@@ -64,17 +61,12 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
 
         if n == target:
             break
-        
-        prev_dir: None or str = G.get_edge_data(prev[n], n)
-        prev_dir = prev_dir['edge_dir'] if prev_dir else None
 
-        neighbours = legal_neighbours(n, prev_dir, G.out_edges(n, data=True))
-        for nb, direction in neighbours:
+        for _, nb in G.out_edges(n):
             new_dist = dist[n] + edge_length(G, n, nb)
             if new_dist < dist[nb]:
                 dist[nb] = new_dist
                 prev[nb] = n
-                # prev_dir[nb] = direction if nb else pass
 
     path = []
     node = target
@@ -84,18 +76,6 @@ def dijkstra_with_weights(G: nx.DiGraph, source, target):
             node = prev[node]
 
     return path
-
-def legal_neighbours(node: int, prev_dir: str, neighbour_edges: list):
-    if not prev_dir:
-        return [(nb, data['edge_dir']) for _, nb, data in neighbour_edges]
-    vec_from_prev = dir_to_vec(prev_dir)
-    output = []
-    for _, nb, data in neighbour_edges:
-        vec_to_next = dir_to_vec(data["edge_dir"])
-        dot_prod = np.dot(vec_from_prev, vec_to_next)
-        if dot_prod > 0:
-            output.append((nb, data["edge_dir"]))
-
 
 def edge_length(G: nx.DiGraph, node1, node2) -> int:
     type1 = G.nodes[node1]["type"]
@@ -132,26 +112,6 @@ def direction(frm: tuple[int, int], to: tuple[int, int]) -> str:
         return 'NW'
     else:
         raise Exception("Tried to move more than one block.")
-
-def dir_to_vec(direction: str) -> tuple[int]:
-    if direction == 'N':
-        return (0, 1)
-    if direction == 'NE':
-        return (1, 1)
-    if direction == 'E':
-        return (1, 0)
-    if direction == 'SE':
-        return (1, -1)
-    if direction == 'S':
-        return (0, -1)
-    if direction == 'SW':
-        return (-1, -1)
-    if direction == 'W':
-        return (-1, 0)
-    if direction == 'NW':
-        return (-1, 1)
-    else:
-        raise Exception("Invalid direction")
     
 def is_move_valid_not_blocked(graph: nx.DiGraph, move: tuple[tuple[int, int]], node: int) -> bool:
         def get_nb_frm_dir(node, dir: str) -> bool:
