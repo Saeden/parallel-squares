@@ -4,19 +4,97 @@ from networkx import is_weakly_connected, subgraph_view
 from graphs.drawing import *
 from graphs.utils import is_move_valid_can_blocked, is_move_valid_not_blocked, is_move_valid_with_prev_move
 
-def transform_shortest_path(world: World):
+def transform_shortest_split(world: World, draw=False):
     rc_graph = ReconGraph(world=world)
     move_num = 1
+    print(f"The current number of source blocks is: {len(rc_graph.src_blocks)}\n")
     while rc_graph.src_blocks:
         # draw_path_graph(rc_graph)
 
-        max_path_pos, max_path = find_min_path(world, rc_graph)
-        if not max_path_pos:
-            pos_path, path = find_min_path(world, rc_graph)
+        min_path_pos, min_path = find_min_path(world, rc_graph)
+        if draw:
+            draw_all_paths(rc_graph, [min_path])
+        pos_path = min_path_pos
+        if not min_path_pos:
+            split_path_pos, split_path = find_split_path_max(world, rc_graph)
+            pos_path = split_path
+            for ind, pos_path in enumerate(split_path_pos):
+                try:
+                    world.execute_path(pos_path)
+                    print(f"\nThe current number of moves that have been made is {move_num}")
+                    print(f"The current number of source blocks is: {len(world.target_list)}\n")
+                    world.print_world()
+                    move_num += 1
+                except Exception as error:
+                    temp_graph = ReconGraph(world=world)
+                    graph_diff = rc_graph.path_G.edges - temp_graph.path_G.edges
+                    print("Tried to do something illegal while executing this path.")
+                    print(error)
+                    # draw_all_paths(rc_graph, split_path[:ind+1])#[ind:])
+                    print("The world looks like this currently. The moves that were succesful have been completed.")
+                    # if graph_diff:
+                    #     print(f"\nThe current number of moves that have been made is {move_num}\n")
+                    #     move_num += 1
+                    world.add_targets()
+                    world.print_world()
+                    print("Continuing with this configuration...")
+                    
+                    del temp_graph
+                    break
+            pass
+            # draw_all_paths_and_move_colors(rc_graph, max_path)
+            # raise ValueError("There are no connected paths :(")
+
+        else:
+            try:
+                world.execute_path(pos_path)
+                print(f"\nThe current number of moves that have been made is {move_num}")
+                print(f"The current number of source blocks is: {len(rc_graph.src_blocks)}\n")
+                world.print_world()
+                move_num += 1
+            except Exception as error:
+                temp_graph = ReconGraph(world=world)
+                graph_diff = rc_graph.path_G.edges - temp_graph.path_G.edges
+                print("Tried to do something illegal while executing this path.")
+                print(error)
+                # draw_all_paths(rc_graph, split_path[:ind+1])#[ind:])
+                print("The world looks like this currently. The moves that were succesful have been completed.")
+                # if graph_diff:
+                #     print(f"\nThe current number of moves that have been made is {move_num}\n")
+                #     move_num += 1
+                world.add_targets()
+                world.print_world()
+                print("Continuing with this configuration...")
+                
+                del temp_graph
+                break
+                # draw_all_paths(rc_graph, [max_path])
+                
+                
+            
+        # rc_graph.draw_move_colors()
+        # rc_graph.draw_path_graph()
+        
+        # rc_graph.draw_all_paths_and_move_colors([path])
+        rc_graph = ReconGraph(world=world)
+    
+    draw_path_graph(rc_graph)
+
+def transform_shortest_path(world: World, draw=False):
+    rc_graph = ReconGraph(world=world)
+    move_num = 1
+    print(f"The current number of source blocks is: {len(rc_graph.src_blocks)}\n")
+    while rc_graph.src_blocks:
+        # draw_path_graph(rc_graph)
+
+        min_path_pos, min_path = find_min_path(world, rc_graph)
+        if draw:
+            draw_all_paths(rc_graph, [min_path])
+        if not min_path_pos:
             draw_all_paths_and_move_colors(rc_graph, max_path)
             raise ValueError("There are no connected paths :(")
 
-        pos_path = max_path_pos
+        pos_path = min_path_pos
         try:
             world.execute_path(pos_path)
             print(f"\nThe current number of moves that have been made is {move_num}")
@@ -50,6 +128,8 @@ def transform_shortest_path(world: World):
         rc_graph = ReconGraph(world=world)
     
     draw_path_graph(rc_graph)
+
+    
 def transform_xy_monot(world: World):
     rc_graph = ReconGraph(world=world)
     move_num = 1
@@ -135,6 +215,10 @@ def find_max_path(world, rc_graph: ReconGraph):
 
 def find_min_path(world, rc_graph):
     all_paths = rc_graph.find_all_paths_min()
+    if not all_paths:
+                # rc_graph.draw_all_paths(all_paths)
+            print("Currently no connected shortest paths between a target and source, will now try splitting paths...")
+            return [[],[]]
     # rc_graph.draw_all_paths(all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
@@ -145,10 +229,10 @@ def find_min_path(world, rc_graph):
         i += 1
         if i == len(all_paths):
                 # rc_graph.draw_all_paths(all_paths)
-            print("Currently no connected paths, will now try splitting paths...")
+            print("Currently no connected shortest paths between a target and source, will now try splitting paths...")
             return [[],[]]
-            rc_graph.draw_all_paths_and_move_colors(all_paths)
-            raise ValueError("There are no connected paths :(")
+            #rc_graph.draw_all_paths_and_move_colors(all_paths)
+            #raise ValueError("There are no connected paths :(")
         path = all_paths[i]
         pos_path = rc_graph.convert_ids_to_pos(path)
     return pos_path, path
@@ -184,6 +268,7 @@ def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_id
         if type(block) == int:
             blocks[block] = False
 
+    prev_move = None
 
     def filter_node(node):
         try:
@@ -199,11 +284,15 @@ def check_path_connectivity(graph: ReconGraph, world: World, path: list, path_id
         if block:
             blocks[edge_ids[(-ind)-1][1]] = True
             only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+            if not is_move_valid_with_prev_move(cur_move = edge, prev_move = prev_move):
+                return False
             if not is_move_valid_can_blocked(graph.cnct_G, edge, node=edge_ids[(-ind)-1][0]):
                 return False
             if not is_weakly_connected(only_blocks_view):
                 return False
             blocks[edge_ids[(-ind)-1][1]] = False
+
+        prev_move = edge
            
     return True
 
@@ -253,7 +342,7 @@ def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list
                 return (connected_split, connected_split_ids), (discnct_split, discnct_split_ids)
             # blocks[edge_ids[(-ind)-1][0]] = False
             # blocks[edge_ids[(-ind)-1][1]] = False
-            prev_move = edge
+        prev_move = edge
            
     return (path, path_ids), ([],[])
 

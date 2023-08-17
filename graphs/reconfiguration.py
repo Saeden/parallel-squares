@@ -2,7 +2,7 @@ import networkx as nx
 from model.world import World
 from graphs.utils import *
 from model.block import Block
-from graphs.drawing import draw_path_graph
+from graphs.drawing import draw_path_graph, draw_all_paths_and_move_colors
 
 
 class ReconGraph:
@@ -341,7 +341,8 @@ class ReconGraph:
                 pass
                 
         if not all_paths:
-            draw_path_graph(graph=self)
+            # draw_path_graph(graph=self)
+            draw_all_paths_and_move_colors(graph=self, paths=[])
             raise ValueError("There are no max paths from any source block to any target block.")
 
         return all_paths
@@ -365,8 +366,9 @@ class ReconGraph:
                 pass
                 
         if not all_paths:
-            self.draw_path_graph()
-            raise ValueError("There are no paths from any source block to any target block.")
+            #self.draw_path_graph()
+            pass
+            # raise ValueError("There are no paths from any source block to any target block.")
 
         return all_paths
      

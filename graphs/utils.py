@@ -13,7 +13,7 @@ def get_orth_in_neighbours(graph: nx.DiGraph, node) -> list:
     all_neighbours = graph.in_edges(node, data="edge_dir")
     output = []
     for nb in all_neighbours:
-        if nb[2] in ['N', 'E', 'S', 'W']:
+        if nb[2] in ['N', 'E', 'S', 'W'] and type(nb[0]) == int:
             output.append(nb[0])
     return output
 

@@ -239,7 +239,7 @@ class World:
 
             for orth_nb in ['N', 'E', 'S', 'W']:
                 neighbour = cur_block.neighbours[orth_nb]
-                if neighbour:
+                if neighbour: # and not seen[neighbour.id]
                     queue.append(neighbour.id)
             
             del queue[0]
