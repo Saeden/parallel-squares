@@ -8,6 +8,7 @@ def transform_xy_monot(world: World):
     rc_graph = ReconGraph(world=world)
     move_num = 1
     while rc_graph.src_blocks:
+        print(f"The current number of source blocks is: {len(rc_graph.src_blocks)}")
         # draw_path_graph(rc_graph)
         split_path_pos, split_path = find_split_path_max(world, rc_graph)
         max_path_pos, max_path = find_max_path(world, rc_graph)
@@ -23,7 +24,8 @@ def transform_xy_monot(world: World):
         if num_blocks_max_path >= num_blocks_split_path:
             pos_path = max_path_pos
             world.execute_path(pos_path)
-            print(f"\nThe current number of moves that have been made is {move_num}\n")
+            print(f"\nThe current number of moves that have been made is {move_num}")
+            print(f"The current number of source blocks is: {len(rc_graph.src_blocks)}\n")
             world.print_world()
             move_num += 1
             # draw_all_paths(rc_graph, [max_path])
@@ -33,7 +35,8 @@ def transform_xy_monot(world: World):
             for ind, pos_path in enumerate(split_path_pos):
                 try:
                     world.execute_path(pos_path)
-                    print(f"\nThe current number of moves that have been made is {move_num}\n")
+                    print(f"\nThe current number of moves that have been made is {move_num}")
+                    print(f"The current number of source blocks is: {len(rc_graph.src_blocks)}\n")
                     world.print_world()
                     move_num += 1
                 except Exception as error:
