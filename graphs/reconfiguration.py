@@ -342,7 +342,7 @@ class ReconGraph:
                 
         if not all_paths:
             draw_path_graph(graph=self)
-            raise ValueError("There are no paths from any source block to any target block.")
+            raise ValueError("There are no max paths from any source block to any target block.")
 
         return all_paths
         #self.draw_all_paths(all_paths)

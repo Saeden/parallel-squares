@@ -1,5 +1,6 @@
 import networkx as nx
 import math
+import numpy as np
 
 def get_node_frm_attr(graph: nx.DiGraph, attr: str, val) -> int:
     for node in graph.nodes.data(attr):
@@ -156,7 +157,25 @@ def is_move_valid_not_blocked(graph: nx.DiGraph, move: tuple[tuple[int, int]], n
                 return True
         else:
             return False
-        
+
+def is_move_valid_with_prev_move(cur_move: tuple, prev_move: tuple) -> bool:
+    if not prev_move:
+        return True
+
+    p1 = cur_move[0]
+    p2 = cur_move[1]
+    cur_vec = (p2[0]-p1[0], p2[1]-p1[1])
+
+    p1 = prev_move[0]
+    p2 = prev_move[1]
+    prev_vec = (p2[0]-p1[0], p2[1]-p1[1])
+    dot_prod = np.dot(cur_vec, prev_vec)
+
+    if dot_prod > 0:
+        return True
+    else:
+        return False
+
 def is_move_valid_can_blocked(graph: nx.DiGraph, move: tuple[tuple[int, int]], node: int) -> bool:
         def get_nb_frm_dir(node, dir: str) -> bool:
             all_neighbours = graph.out_edges(node, data="edge_dir")

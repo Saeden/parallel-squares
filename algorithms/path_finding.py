@@ -2,7 +2,7 @@ from model.world import *
 from graphs.reconfiguration import ReconGraph
 from networkx import is_weakly_connected, subgraph_view
 from graphs.drawing import *
-from graphs.utils import is_move_valid_can_blocked, is_move_valid_not_blocked
+from graphs.utils import is_move_valid_can_blocked, is_move_valid_not_blocked, is_move_valid_with_prev_move
 
 def transform_xy_monot(world: World):
     rc_graph = ReconGraph(world=world)
@@ -28,23 +28,28 @@ def transform_xy_monot(world: World):
             move_num += 1
             # draw_all_paths(rc_graph, [max_path])
         else:
-            # draw_all_paths(rc_graph, split_path)
+            # if move_num > 90:
+            #     draw_all_paths(rc_graph, split_path)
             for ind, pos_path in enumerate(split_path_pos):
                 try:
                     world.execute_path(pos_path)
                     print(f"\nThe current number of moves that have been made is {move_num}\n")
                     world.print_world()
                     move_num += 1
-                except:
+                except Exception as error:
                     temp_graph = ReconGraph(world=world)
                     graph_diff = rc_graph.path_G.edges - temp_graph.path_G.edges
-                    if graph_diff:
-                        print(f"\nThe current number of moves that have been made is {move_num}\n")
-                        move_num += 1
+                    print("Tried to do something illegal while executing this path.")
+                    print(error)
+                    # draw_all_paths(rc_graph, split_path[:ind+1])#[ind:])
+                    print("The world looks like this currently. The moves that were succesful have been completed.")
+                    # if graph_diff:
+                    #     print(f"\nThe current number of moves that have been made is {move_num}\n")
+                    #     move_num += 1
                     world.add_targets()
                     world.print_world()
-                    draw_all_paths(rc_graph, split_path[ind:])
-                    print("Tried to do something illegal while executing this path.")
+                    print("Continuing with this configuration...")
+                    
                     del temp_graph
                     break
                 
@@ -76,6 +81,8 @@ def find_max_path(world, rc_graph: ReconGraph):
         path = all_paths[i]
         pos_path = rc_graph.convert_ids_to_pos(path)
     
+    #draw_all_paths(rc_graph, path)
+
     return pos_path, path
 
 def find_min_path(world, rc_graph):
@@ -102,7 +109,7 @@ def find_min_path(world, rc_graph):
 
 def find_split_path_max(world, rc_graph: ReconGraph):
     all_paths = rc_graph.find_all_paths_max(strictly_connected=False)
-    draw_all_paths(graph=rc_graph, paths=all_paths)
+    # draw_all_paths(graph=rc_graph, paths=all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
     all_paths = sorted(all_paths, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
@@ -117,7 +124,7 @@ def find_split_path_max(world, rc_graph: ReconGraph):
         output_ids += [cnct_path[1]]
 
     
-    draw_all_paths(rc_graph, output_ids)
+    #draw_all_paths(rc_graph, output_ids)
 
     return output, output_ids
 
@@ -170,12 +177,20 @@ def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list
     def filter_edge(node1, node2):
         return graph.cnct_G[node1][node2].get("edge_connected", True)
 
+    prev_move = None
+
     for ind, edge in enumerate(path_edges):
         block = world.configuration.get_block_p(edge[0])
         if block:
             blocks[edge_ids[(-ind)-1][0]] = False
             # blocks[edge_ids[(-ind)-1][1]] = True
             only_blocks_view = subgraph_view(graph.cnct_G, filter_node=filter_node, filter_edge=filter_edge)
+            if not is_move_valid_with_prev_move(cur_move = edge, prev_move = prev_move):
+                connected_split = path[(-ind)-1:]
+                connected_split_ids = path_ids[(-ind)-1:]
+                discnct_split = path[:(-ind)]
+                discnct_split_ids = path_ids[:(-ind)]
+                return (connected_split, connected_split_ids), (discnct_split, discnct_split_ids)
             if not is_move_valid_can_blocked(graph=graph.cnct_G, move=edge, node=edge_ids[(-ind)-1][0]):
                 connected_split = path[(-ind)-1:]
                 connected_split_ids = path_ids[(-ind)-1:]
@@ -190,6 +205,7 @@ def split_path_check(graph: ReconGraph, world: World, path: list, path_ids: list
                 return (connected_split, connected_split_ids), (discnct_split, discnct_split_ids)
             # blocks[edge_ids[(-ind)-1][0]] = False
             # blocks[edge_ids[(-ind)-1][1]] = False
+            prev_move = edge
            
     return (path, path_ids), ([],[])
 

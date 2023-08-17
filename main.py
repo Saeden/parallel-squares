@@ -1,5 +1,7 @@
 import shapes.shapes as shapes
 from model.world import *
+from model.configuration import Configuration
+from model.util import deserialize
 from algorithms.path_finding import transform_xy_monot, mark_finished_blocks
 from algorithms.block_matching import matching_monotone
 from graph_tool.all import *
@@ -10,6 +12,28 @@ from graphs.reconfiguration import ReconGraph
 DEBUG = True
 
 def main():
+    start: World = deserialize(path="gridsize_10x10_filledpercentage_70_id_8.json", dim=10)
+    target: World = deserialize(path="gridsize_10x10_filledpercentage_70_id_9.json", dim=10)
+
+    world = create_world(start, target)
+    world.print_world()
+
+    print("\nRun the algorithm: ")
+    world = transform_xy_monot(world)
+
+def create_world(start: Configuration, target: Configuration) -> World:
+    max_x: int = max((start.boundary[0], target.boundary[0]))
+    max_y: int = max((start.boundary[1], target.boundary[1]))
+
+    world: World = World(max_x, max_y)
+    world.add_configuration(start)
+    world.print_world()
+    world.add_targets(target=target)
+
+    return world
+    
+
+def main2():
     # start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=12, seed=19)
     # out_start: Configuration = shapes.xy_monotone(max_x=6, max_y=6, max_vol=10, seed=19)
     # target: Configuration = shapes.xy_monotone(max_x=5, max_y=5, max_vol=12, seed=1)
@@ -65,16 +89,8 @@ def main():
     # start: Configuration = shapes.left_flow_complicated(start=True)
     # target: Configuration = shapes.left_flow_complicated(start=False)
 
-    max_x: int = max((start.boundary[0], target.boundary[0]))
-    max_y: int = max((start.boundary[1], target.boundary[1]))
-
-    world: World = World(max_x, max_y)
-    world.add_configuration(start)
-    world.print_world()
-    world.add_targets(target=target)
-    # outworld: World = World(max_x, max_y)
-    # outworld.add_configuration(out_start)
-
+    
+    create_world(start=start, target=target)
     print(f"\nThe world contains {world.num_blocks} blocks")
 
     print("The world looks as follows:")
