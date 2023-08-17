@@ -2,7 +2,7 @@ import shapes.shapes as shapes
 from model.world import *
 from model.configuration import Configuration
 from model.util import deserialize
-from algorithms.path_finding import transform_xy_monot, mark_finished_blocks
+from algorithms.path_finding import transform_xy_monot, transform_shortest_path
 from algorithms.block_matching import matching_monotone
 from graph_tool.all import *
 from graphs.reconfiguration import ReconGraph
@@ -19,7 +19,7 @@ def main():
     world.print_world()
 
     print("\nRun the algorithm: ")
-    world = transform_xy_monot(world)
+    world = transform_shortest_path(world)
 
 def create_world(start: Configuration, target: Configuration) -> World:
     max_x: int = max((start.boundary[0], target.boundary[0]))
