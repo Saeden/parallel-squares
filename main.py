@@ -20,6 +20,7 @@ def main():
 
     print("\nRun the algorithm: ")
     world = transform_shortest_split(world)
+    # world = transform_xy_monot(world)
 
 def create_world(start: Configuration, target: Configuration) -> World:
     max_x: int = max((start.boundary[0], target.boundary[0]))

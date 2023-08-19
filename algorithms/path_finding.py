@@ -1,6 +1,6 @@
+from networkx import is_weakly_connected, subgraph_view
 from model.world import *
 from graphs.reconfiguration import ReconGraph
-from networkx import is_weakly_connected, subgraph_view
 from graphs.drawing import *
 from graphs.utils import is_move_valid_can_blocked, is_move_valid_not_blocked, is_move_valid_with_prev_move
 
@@ -16,7 +16,8 @@ def transform_shortest_split(world: World, draw=False):
             draw_all_paths(rc_graph, [min_path])
         pos_path = min_path_pos
         if not min_path_pos:
-            split_path_pos, split_path = find_split_path_max(world, rc_graph)
+            split_path_pos, split_path = find_split_path_min(world, rc_graph)
+            draw_all_paths_and_move_colors(rc_graph, split_path)
             pos_path = split_path
             for ind, pos_path in enumerate(split_path_pos):
                 try:
@@ -41,7 +42,6 @@ def transform_shortest_split(world: World, draw=False):
                     
                     del temp_graph
                     break
-            pass
             # draw_all_paths_and_move_colors(rc_graph, max_path)
             # raise ValueError("There are no connected paths :(")
 
@@ -217,10 +217,11 @@ def find_min_path(world, rc_graph):
     all_paths = rc_graph.find_all_paths_min()
     if not all_paths:
                 # rc_graph.draw_all_paths(all_paths)
+            rc_graph.draw_all_paths_and_move_colors([all_paths])
             print("Currently no connected shortest paths between a target and source, will now try splitting paths...")
             return [[],[]]
     # rc_graph.draw_all_paths(all_paths)
-    # rc_graph.draw_all_paths_and_move_colors(all_paths)
+    
     i=0
     all_paths = sorted(all_paths, key=len, reverse=True)
     path = all_paths[0]
@@ -230,6 +231,7 @@ def find_min_path(world, rc_graph):
         if i == len(all_paths):
                 # rc_graph.draw_all_paths(all_paths)
             print("Currently no connected shortest paths between a target and source, will now try splitting paths...")
+            draw_all_paths_and_move_colors(rc_graph,all_paths)
             return [[],[]]
             #rc_graph.draw_all_paths_and_move_colors(all_paths)
             #raise ValueError("There are no connected paths :(")
@@ -241,6 +243,27 @@ def find_min_path(world, rc_graph):
 
 def find_split_path_max(world, rc_graph: ReconGraph):
     all_paths = rc_graph.find_all_paths_max(strictly_connected=False)
+    # draw_all_paths(graph=rc_graph, paths=all_paths)
+    # rc_graph.draw_all_paths_and_move_colors(all_paths)
+    i=0
+    all_paths = sorted(all_paths, key=lambda lst: sum(isinstance(item, int) for item in lst), reverse=True)
+    path = all_paths[i]
+    pos_path = rc_graph.convert_ids_to_pos(path)
+    cnct_path, discnct_path =  split_path_check(graph=rc_graph, world=world, path=pos_path, path_ids=path)
+    output = [cnct_path[0]]
+    output_ids = [cnct_path[1]]
+    while discnct_path[0]:
+        cnct_path, discnct_path = split_path_check(graph=rc_graph, world=world, path=discnct_path[0], path_ids=discnct_path[1])
+        output += [cnct_path[0]]
+        output_ids += [cnct_path[1]]
+
+    
+    #draw_all_paths(rc_graph, output_ids)
+
+    return output, output_ids
+
+def find_split_path_min(world, rc_graph: ReconGraph):
+    all_paths = rc_graph.find_all_paths_min()
     # draw_all_paths(graph=rc_graph, paths=all_paths)
     # rc_graph.draw_all_paths_and_move_colors(all_paths)
     i=0
