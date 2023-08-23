@@ -12,8 +12,16 @@ from graphs.reconfiguration import ReconGraph
 DEBUG = True
 
 def main():
-    start: World = deserialize(path="gridsize_10x10_filledpercentage_70_id_8.json", dim=10)
-    target: World = deserialize(path="gridsize_10x10_filledpercentage_70_id_9.json", dim=10)
+    start: Configuration = shapes.xy_monotone_new()
+    target: Configuration = shapes.xy_monotone_new()
+
+    world = create_world(start, target)
+    world.print_world()
+    
+
+def main3():
+    start: Configuration = deserialize(path="gridsize_10x10_filledpercentage_70_id_8.json", dim=10)
+    target: Configuration = deserialize(path="gridsize_10x10_filledpercentage_70_id_9.json", dim=10)
 
     world = create_world(start, target)
     world.print_world()

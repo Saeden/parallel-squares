@@ -58,45 +58,62 @@ def xy_monotone(max_x = 10, max_y = 10, max_vol = 50, DEBUG = DEBUG, seed = None
 
     return output
 
-def xy_monotone_new(max_vol = 50, DEBUG = DEBUG, seed = None):
+def xy_monotone_new(number = 50, x=10, DEBUG = DEBUG, seed = None):
     if seed:
         random.seed(seed)
-    
-    shape_coordinates = []
-    
-    # Generate starting coordinate
-    x = 0
-    y = 0
-    max_x = 0
-    max_y = 0
-    
-    for _ in range(max_vol):
-        shape_coordinates.append((x, y))
         
-        # Randomly select a direction
-        direction = random.choice(['up', 'right'])
-        
-        if direction == 'up' and x == 0:
-            y += 1
-            max_y = y
-        elif direction == 'up' and x>0 and y<max_y:
-            y += 1
-        elif direction == 'up' and x>0 and y>=max_y:
-            y=0
-            x += 1
-            max_x = x
-        else:  # direction == 'right'
-            y=0
-            x += 1
-            max_x = x
+    if x <= 0:
+        raise ValueError("Number of groups (x) must be a positive integer.")
     
+    if number <= 0:
+        raise ValueError("Number to partition must be a positive integer.")
+    
+
+    groups = [0] * x
+    
+    # Distribute the number into x groups
+    for i in range(number):
+        while True:
+            # Randomly select a group
+            group_index = random.randint(0, x - 1)
+            groups[group_index] += 1
+            # Check if adding to this group would exceed the number
+            if sum(groups) > number:
+                groups[group_index] -= 1
+                break
+
+    max_x = len(groups)
+    max_y = max(groups)
     output: Configuration = Configuration((max_x, max_y))
 
-    for id, coord in enumerate(shape_coordinates):
-        output.add(Block(p=coord, id=id))
-    
+    if DEBUG:
+        shape = []
+
+    groups.sort(reverse=True)
+    id = 0
+    for x in range(len(groups)):
+        if DEBUG:
+            column = []
+        
+        for y in range(groups[x]):
+            if DEBUG:
+                column.append(x)
+            
+            square = Block(p = (x, y), id = id)
+            id += 1
+            output.add(square)
+        
+        if DEBUG:
+            shape.append(column)
+   
+
+    if DEBUG:
+        tr_shape = transpose_monotone(shape)
+        print_lists(tr_shape)
+        print(f"MAX_VOL: {max_vol} (should be 0)")
 
     return output
+
 
 def specific_example1(start: bool):
     shape_coordinates = []

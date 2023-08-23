@@ -79,6 +79,7 @@ def transform_shortest_split(world: World, draw=False):
         rc_graph = ReconGraph(world=world)
     
     draw_path_graph(rc_graph)
+    return world
 
 def transform_shortest_path(world: World, draw=False):
     rc_graph = ReconGraph(world=world)
