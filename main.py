@@ -6,18 +6,21 @@ from algorithms.path_finding import transform_xy_monot, transform_shortest_path,
 from algorithms.block_matching import matching_monotone
 from graph_tool.all import *
 from graphs.reconfiguration import ReconGraph
-
+from results.monotone import get_monotone_results
+import random
 
 
 DEBUG = True
 
 def main():
-    start: Configuration = shapes.xy_monotone_new()
-    target: Configuration = shapes.xy_monotone_new()
+    # # # hard coded specific example 2 | 3 islands
+    # start: Configuration = shapes.specific_example2(start=True)
+    # target: Configuration = shapes.specific_example2(start=False)
 
-    world = create_world(start, target)
-    world.print_world()
-    
+    # world = create_world(start, target)
+    # world.print_world()
+    # world, move_num = matching_monotone(world)
+    get_monotone_results()
 
 def main3():
     start: Configuration = deserialize(path="gridsize_10x10_filledpercentage_70_id_8.json", dim=10)

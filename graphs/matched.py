@@ -24,7 +24,7 @@ class MatchGraph:
         for x in range(len(self.world.used_cells)):
             for y in range(len(self.world.used_cells[x])):
                 cell_type = self.world.used_cells[x][y]
-                if cell_type == -2:
+                if cell_type == -2 or cell_type >= self.world.num_blocks:
                     self.match_G.add_node(f"P{perimeterID}", loc=(x-1, y-1), color="gray", \
                         move_color="gray", move_status=None, type="perimeter", status=None)
                     perimeterID += 1

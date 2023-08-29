@@ -4,7 +4,7 @@ import numpy as np
 # A glorified list of Blocks, which contains the the size of the boundary square of the configuration
 class Configuration:
     def __init__(self, boundary: tuple[int, int] = (None, None)):
-        self.blocks: np.array = np.empty(shape=boundary[1]*boundary[0], dtype=object)
+        self.blocks: np.array = np.empty(shape=boundary[1]*boundary[0]*4, dtype=object)
         #self.blocks: list[Block] = []
         self.boundary: tuple[int, int] = boundary
 

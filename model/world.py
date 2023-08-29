@@ -33,6 +33,30 @@ class World:
 
         self.get_perimeter()
 
+    def add_boundary(self, max_x, max_y):
+        id = 0
+        while self.configuration.blocks[id]:
+            id+=1
+
+        id += 1
+
+        for x in range(max_x):
+            block = Block((x, -1), id)
+            block.status = "ghost"
+            self.configuration.blocks[id] = block
+            self.configuration.get_neighbours(block)
+            self.add_block((x, -1), id)
+            self.num_blocks -= 1
+            id += 1
+        for y in range(max_y):
+            block = Block((-1, y), id)
+            self.configuration.blocks[id] = block
+            self.configuration.get_neighbours(block)
+            block.status = "ghost"
+            self.add_block((-1, y), id)
+            self.num_blocks -= 1
+            id += 1
+
     def add_targets(self, target: Configuration = None):
         if target:
             self.target = target
@@ -106,6 +130,8 @@ class World:
         current_cell = self.used_cells[x][y]
         if current_cell == -3:
             return "target"
+        elif current_cell > len(self.configuration.blocks):
+            return None
         block = self.configuration.get_block_id(id=id)
         if not block:
             return None
@@ -147,9 +173,26 @@ class World:
             #         self.configuration.get_neighbours(nb)
             self.get_perimeter()
 
+
+    def move_sequentially(self, source_p, to):
+        block = self.configuration.get_block_p(source_p)
+        self.used_cells[block.p[0]+1][block.p[1]+1] = -1
+        self.used_cells[to[0]+1][to[1]+1] = block.id
+        block.p = to
+        block.rm_neighbours()
+        self.configuration.get_neighbours(block)
+            # for nb in block.neighbours.values():
+            #     if nb:
+            #         nb.rm_neighbours()
+            #         self.configuration.get_neighbours(nb)
+        self.get_perimeter()
+        self.add_targets()
+
+
     def is_valid(self, block: Block, to: tuple[int, int]) -> bool:
         try:
-            self.has_collision(to)
+            if self.has_collision(to): 
+                raise Exception(f"There was a collision moving block {block.id} from {block.p} to {to}")
         except:
             raise Exception(f"There was a collision moving block {block.id} from {block.p} to {to}")
 
@@ -162,7 +205,7 @@ class World:
         return True
 
     def has_collision(self, to: tuple[int, int]) -> bool:
-        target = self.used_cells[to[0]][to[1]]
+        target = self.used_cells[to[0]+1][to[1]+1]
         if target >= 0:
             return True
         return False
@@ -270,6 +313,8 @@ class World:
                     out_row.append(colored('■ ', 'grey'))
                 elif cell == -3:
                     out_row.append(colored('■ ', 'red'))
+                elif cell > self.num_blocks:
+                    out_row.append('■ ')
                 elif self.configuration.get_block_id(cell).status == 'source':
                     out_row.append(colored('■ ', 'green'))
                 elif self.configuration.get_block_id(cell).status == 'finished':

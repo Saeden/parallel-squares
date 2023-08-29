@@ -1,0 +1,6 @@
+Tested 10 cases, with 10 blocks for the start and target config.
+Out of these 10 cases 6 gave an error during reconfiguration
+The average number of moves for each case was 2.0
+The number of moves for each case were: [4, 4, 0, 0]
+
+

@@ -58,27 +58,27 @@ def xy_monotone(max_x = 10, max_y = 10, max_vol = 50, DEBUG = DEBUG, seed = None
 
     return output
 
-def xy_monotone_new(number = 50, x=10, DEBUG = DEBUG, seed = None):
+def xy_monotone_new(blocks=50, x=10, DEBUG=DEBUG, seed=None):
     if seed:
         random.seed(seed)
         
     if x <= 0:
         raise ValueError("Number of groups (x) must be a positive integer.")
     
-    if number <= 0:
+    if blocks <= 0:
         raise ValueError("Number to partition must be a positive integer.")
     
 
     groups = [0] * x
     
-    # Distribute the number into x groups
-    for i in range(number):
+    # Distribute the blocks into x groups
+    for i in range(blocks):
         while True:
             # Randomly select a group
             group_index = random.randint(0, x - 1)
             groups[group_index] += 1
-            # Check if adding to this group would exceed the number
-            if sum(groups) > number:
+            # Check if adding to this group would exceed the blocks
+            if sum(groups) > blocks:
                 groups[group_index] -= 1
                 break
 
