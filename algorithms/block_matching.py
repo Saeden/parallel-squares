@@ -14,16 +14,17 @@ def matching_monotone(world: World) -> World:
     move_num += empty_move_num
 
     # Make the matching
-    matching = make_matching_old(world)
+    islands = get_islands(world=world)
+    matching = make_matching(islands=islands, world=world)
     for island in matching:
-        flow = island[0][2]
+        # flow = island[0][2]
         
-        if flow == "left":
-            # move highest x+y of source blocks, if many blocks with equal x+y move target with lowest x+y (now trying highest)
-            island = sorted(island, key=lambda pos: (pos[0][0] + pos[0][1],  -(pos[1][0] + pos[1][1])), reverse=True)
+        # if flow == "left":
+        #     # move highest x+y of source blocks, if many blocks with equal x+y move target with lowest x+y (now trying highest)
+        #     island = sorted(island, key=lambda pos: (pos[0][0] + pos[0][1],  -(pos[1][0] + pos[1][1])), reverse=True)
             
-        elif flow == "right":
-            island = sorted(island, key=lambda pos: (pos[0][0] + pos[0][1],  -(pos[1][0] + pos[1][1])), reverse=True)
+        # elif flow == "right":
+        #     island = sorted(island, key=lambda pos: (pos[0][0] + pos[0][1],  -(pos[1][0] + pos[1][1])), reverse=True)
         
         for matched_blocks in island:
             source = matched_blocks[0]
@@ -184,14 +185,25 @@ def empty_boundary(world: World) -> World:
     return world, move_num
 
 
-def make_matching(islands) -> list:
+def make_matching(islands, world) -> list:
     # make distinct left and right flow configurations
     matching_lst = []
+    output = []
     for island in islands:
         sources = sorted(island[0], key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
         targets = sorted(island[1])
-        for source in sources:
-            pass
+        for ind, source in enumerate(sources):
+            matching_lst.append((source, targets[ind], None, ind))
+        output.append(matching_lst)
+        matching_lst = []
+    
+    graph = MatchGraph(world=world)
+    graph.add_match_labels(output)
+    draw_match_labels(graph)
+
+    del graph
+
+    return output
 
 def get_islands(world):
     sources = []
@@ -252,7 +264,7 @@ def get_islands(world):
                         del row_stack[-1]
                         del col_stack[-1]
                 if not col_stack:
-                    islands.append((sources, target))
+                    islands.append((sources, targets))
                     matching_lst = []
                     if num_matches == max_num_matches:
                         break
