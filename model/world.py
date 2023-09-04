@@ -172,6 +172,7 @@ class World:
             #         nb.rm_neighbours()
             #         self.configuration.get_neighbours(nb)
             self.get_perimeter()
+            self.add_targets()
 
 
     def move_sequentially(self, source_p, to):

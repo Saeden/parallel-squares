@@ -9,10 +9,11 @@ import random
 
 
 def get_monotone_results():
-    # number_of_blocks = [10,25,50]#,100,200]
+    number_of_blocks = [10,25]#,50]#,100,200]
     number_of_blocks = [25]
 
     seed_list = range(10)
+#    seed_list = [1]
 
     num_err_configs = 0
     error_configs = []
@@ -20,6 +21,7 @@ def get_monotone_results():
     for block_num in number_of_blocks:
         moves_per_solve = []
         correct_seeds = []
+        #print(f"Testing shapes with {block_num} blocks:")
         for seed in seed_list:
             random.seed(seed)
             max_x = int(block_num/2)
@@ -27,7 +29,6 @@ def get_monotone_results():
             target: Configuration = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
 
             world = create_world(start, target)
-            world.print_world()
 
             # if check_boundary(world):
             #     correct_seeds.append(seed)
@@ -35,11 +36,20 @@ def get_monotone_results():
             #     continue
 
             try:
-                print("\nRun the monotone algorithm:")
+                print(f"\nRun the monotone algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
+                world.print_world()
+                print()
                 world, move_num = matching_monotone(world)
                 moves_per_solve.append(move_num)
-            except:
+                print("The finished shape looks like this.")
+                world.print_world()
+                print()
+            except Exception as e:
                 print("An error occured during reconfiguration...")
+                print(e)
+                print("At the time of error the shape looked like this:")
+                world.print_world()
+                print()
                 num_err_configs += 1
                 error_configs.append(f"Type: {block_num}, Seed: {seed}")
         

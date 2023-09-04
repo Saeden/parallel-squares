@@ -8,10 +8,13 @@ def matching_monotone(world: World) -> World:
     move_num = 0
     # Fill the boundary while preserving monotonicity
     world, fill_move_num = fill_boundary(world)
+    print(f"Filling the boundary cost {fill_move_num} moves.")
     move_num += fill_move_num
     # empty boundary while preserving monotonicity
     world, empty_move_num = empty_boundary(world)
+    print(f"Emptying the excess boundary cost {empty_move_num} moves.")
     move_num += empty_move_num
+    print(f"The total number of moves is {move_num}.")
 
     # Make the matching
     islands = get_islands(world=world)
@@ -31,17 +34,19 @@ def matching_monotone(world: World) -> World:
             target = matched_blocks[1]
             if is_convex_trans(source, target):
                 move_num += 1
-                print(f"\nThis matching is close enough for a single convex transition. Executing now.")
-                print(f"The total number of moves is {move_num}")
+                print(f"This matching is close enough for a single convex transition. Executing now.")
+                print(f"The total number of moves is {move_num}.")
                 source_block = world.configuration.get_block_p(source)
                 execute_convex_trans(source=source_block, to=target, world=world)
             elif 0 in source:
-                 execute_boundary_L_move(source=source, target=target, world=world)
+                move_num += 3
+                print(f"Executing a boundary L-shaped move. The total number of moves is {move_num}")
+                execute_boundary_L_move(source=source, target=target, world=world)
             elif 0 in target:
                 raise ValueError("The boundary should be filled but it is not.")
             else:
                 move_num += 2
-                print(f"\nExecuting an L-shaped move. The total number of moves is {move_num}")
+                print(f"Executing an L-shaped move. The total number of moves is {move_num}")
                 execute_L_move(source=source, target=target, world=world)
                 
 
@@ -107,13 +112,13 @@ def fill_boundary(world: World) -> (World, int):
     for ind, target in enumerate(row_targets):
         source = row_sources[ind]
         world.move_sequentially(source, target[1])
-        world.print_world()
+        # world.print_world()
         move_num += chebyshev(source, target[1])
 
     for ind, target in enumerate(col_targets):
         source = col_sources[ind]
         world.move_sequentially(source, target[1])
-        world.print_world()
+        # world.print_world()
         move_num += chebyshev(source, target[1])
 
     return world, move_num
@@ -173,25 +178,31 @@ def empty_boundary(world: World) -> World:
     for ind, source in enumerate(row_sources):
         target = row_targets[ind]
         world.move_sequentially(source[1], target)
-        world.print_world()
+        # world.print_world()
         move_num += chebyshev(source[1], target)
 
     for ind, source in enumerate(col_sources):
         target = col_targets[ind]
         world.move_sequentially(source[1], target)
-        world.print_world()
+        # world.print_world()
         move_num += chebyshev(source[1], target)
 
     return world, move_num
 
 
 def make_matching(islands, world) -> list:
-    # make distinct left and right flow configurations
     matching_lst = []
     output = []
     for island in islands:
-        sources = sorted(island[0], key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
-        targets = sorted(island[1])
+        first_source_x = island[0][0][0]
+        first_target_x = island[1][0][0]
+        if first_source_x < first_target_x: # right flow:
+            sources = sorted(island[0], key= lambda pos: (pos[0] + pos[1],  pos[1]), reverse=True)
+            targets = sorted(island[1], key= lambda pos: (pos[1], pos[0]))
+        else:
+            sources = sorted(island[0], key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
+            targets = sorted(island[1])
+
         for ind, source in enumerate(sources):
             matching_lst.append((source, targets[ind], None, ind))
         output.append(matching_lst)
@@ -337,7 +348,7 @@ def make_matching_old(world: World) -> list[list]:
             
     graph = MatchGraph(world=world)
     graph.add_match_labels(islands)
-    draw_match_labels(graph)
+    # draw_match_labels(graph)
 
     return islands
 
@@ -347,7 +358,7 @@ def execute_convex_trans(source: Block, to: tuple[int], world: World):
     try:
         world.move_block_to(source, to=to)
         world.add_targets()
-        world.print_world()
+        # world.print_world()
     except:
         if source.p[0] < to[0]:
             top_block = world.get_highest_block_row(source.p[1]-1)
@@ -370,7 +381,7 @@ def execute_L_move(source: tuple, target: tuple, world: World):
 
         world.execute_path(first_chain)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
 
         current_block = source
@@ -380,7 +391,7 @@ def execute_L_move(source: tuple, target: tuple, world: World):
 
         world.execute_path(second_chain)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
     else:
         current_block = (target[0], source[1])
@@ -390,7 +401,7 @@ def execute_L_move(source: tuple, target: tuple, world: World):
 
         world.execute_path(first_chain)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
 
         current_block = source
@@ -400,7 +411,7 @@ def execute_L_move(source: tuple, target: tuple, world: World):
 
         world.execute_path(second_chain)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
 def execute_boundary_L_move(source: Block, target: Block, world: World):
     # raise NotImplementedError
@@ -411,7 +422,7 @@ def execute_boundary_L_move(source: Block, target: Block, world: World):
     if source[0] < target[0]: # right flow
         current_block = (source[0]+1, target[1])
 
-        corner_block = world.configuration.get_block_p((target[0], source [1]))
+        corner_block = world.configuration.get_block_p((source[0], target[1]))
         corner_block_to = (source[0]+1, target[1])
 
         while current_block[0] <= target[0]:
@@ -423,11 +434,11 @@ def execute_boundary_L_move(source: Block, target: Block, world: World):
         top_block_to = (source[0]+1, source[1])
         world.move_block_to(block=top_block, to=top_block_to)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
         # second move (corner block)
         world.move_block_to(block=corner_block, to=corner_block_to)
-        world.print_world()
+        # world.print_world()
 
         current_block = source
         while current_block[1] >= target[1]:
@@ -438,7 +449,7 @@ def execute_boundary_L_move(source: Block, target: Block, world: World):
         world.execute_path(second_chain)
         world.move_block_to(block=top_block, to=top_block_to)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
     else: # left flow
         current_block = (target[0], source[1]+1)
@@ -455,11 +466,11 @@ def execute_boundary_L_move(source: Block, target: Block, world: World):
         top_block_to = (source[0], source[1]+1)
         world.move_block_to(block=top_block, to=top_block_to)
         #for debugging
-        world.print_world()
+        # world.print_world()
 
         # second move (corner block)
         world.move_block_to(block=corner_block, to=corner_block_to)
-        world.print_world()
+        # world.print_world()
 
         current_block = (source[0]-1, source[1])
         while current_block[0] >= target[0]:
@@ -471,4 +482,4 @@ def execute_boundary_L_move(source: Block, target: Block, world: World):
         world.move_block_to(block=top_block, to=top_block_to)
 
         #for debugging
-        world.print_world()
+        # world.print_world()
