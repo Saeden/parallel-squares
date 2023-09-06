@@ -9,12 +9,10 @@ def matching_monotone(world: World) -> World:
     # Fill the boundary while preserving monotonicity
     world, fill_move_num = fill_boundary(world)
     print(f"Filling the boundary cost {fill_move_num} moves.")
+    world.print_world()
     move_num += fill_move_num
-    # empty boundary while preserving monotonicity
-    world, empty_move_num = empty_boundary(world)
-    print(f"Emptying the excess boundary cost {empty_move_num} moves.")
-    move_num += empty_move_num
-    print(f"The total number of moves is {move_num}.")
+    
+    
 
     # Make the matching
     islands = get_islands(world=world)
@@ -49,6 +47,12 @@ def matching_monotone(world: World) -> World:
                 print(f"Executing an L-shaped move. The total number of moves is {move_num}")
                 execute_L_move(source=source, target=target, world=world)
                 
+    # empty boundary while preserving monotonicity
+    world, empty_move_num = empty_boundary(world)
+    print(f"Emptying the excess boundary cost {empty_move_num} moves.")
+    world.print_world()
+    move_num += empty_move_num
+    print(f"The total number of moves is {move_num}.")
 
     return world, move_num
 
@@ -111,15 +115,16 @@ def fill_boundary(world: World) -> (World, int):
 
     for ind, target in enumerate(row_targets):
         source = row_sources[ind]
+        move_num += calc_seq_move_num(world, source, target[1])
         world.move_sequentially(source, target[1])
         # world.print_world()
-        move_num += chebyshev(source, target[1])
+        
 
     for ind, target in enumerate(col_targets):
         source = col_sources[ind]
+        move_num += calc_seq_move_num(world, source, target[1])
         world.move_sequentially(source, target[1])
         # world.print_world()
-        move_num += chebyshev(source, target[1])
 
     return world, move_num
 
@@ -150,6 +155,9 @@ def empty_boundary(world: World) -> World:
     row_targets = []
     ind = 1
     while len(row_targets) < len(row_sources):
+        if len(row_sources) == len(graph.src_blocks):
+            row_targets = [target.p for target in world.target_list]
+            break
         lowest_source_block = row_sources[-1][1]
         row_ind = row_sources[0][1][1] + ind
         block_loc = world.get_highest_block_row(row_ind)
@@ -164,6 +172,9 @@ def empty_boundary(world: World) -> World:
     col_targets = []
     ind = 1
     while len(col_targets) < len(col_sources):
+        if len(col_sources) == len(graph.src_blocks):
+            col_targets = [target.p for target in world.target_list]
+            break
         lowest_source_block = col_sources[-1][1]
         col_ind = col_sources[0][1][0] + ind
         block_loc = world.get_highest_block_col(col_ind)
@@ -177,15 +188,17 @@ def empty_boundary(world: World) -> World:
     move_num = 0
     for ind, source in enumerate(row_sources):
         target = row_targets[ind]
+        move_num += calc_seq_move_num(world, source[1], target)
         world.move_sequentially(source[1], target)
         # world.print_world()
-        move_num += chebyshev(source[1], target)
+       
 
     for ind, source in enumerate(col_sources):
         target = col_targets[ind]
+        move_num += calc_seq_move_num(world, source[1], target)
         world.move_sequentially(source[1], target)
         # world.print_world()
-        move_num += chebyshev(source[1], target)
+        
 
     return world, move_num
 
@@ -196,11 +209,12 @@ def make_matching(islands, world) -> list:
     for island in islands:
         first_source_x = island[0][0][0]
         first_target_x = island[1][0][0]
+        sources = [source for source in island[0] if source[0] != 0 and source[1] != 0]
         if first_source_x < first_target_x: # right flow:
-            sources = sorted(island[0], key= lambda pos: (pos[0] + pos[1],  pos[1]), reverse=True)
+            sources = sorted(sources, key= lambda pos: (pos[0] + pos[1],  pos[1]), reverse=True)
             targets = sorted(island[1], key= lambda pos: (pos[1], pos[0]))
         else:
-            sources = sorted(island[0], key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
+            sources = sorted(sources, key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
             targets = sorted(island[1])
 
         for ind, source in enumerate(sources):
@@ -210,7 +224,7 @@ def make_matching(islands, world) -> list:
     
     graph = MatchGraph(world=world)
     graph.add_match_labels(output)
-    draw_match_labels(graph)
+    # draw_match_labels(graph)
 
     del graph
 
@@ -230,10 +244,10 @@ def get_islands(world):
     max_y = len(world.used_cells[0])
 
     found_pos = {}
-    for x in range(max_x):
+    for x in range(1, max_x):
         if num_matches == max_num_matches:
             break
-        for y in reversed(range(max_y)):
+        for y in reversed(range(1, max_y)):
             try:
                 found = found_pos[(x-1, y-1)]
             except:
@@ -253,7 +267,7 @@ def get_islands(world):
                     temp_x += 1
                     current_cell = world.used_cells[temp_x][y]
                     cell_type: str or None = world.get_cell_type(x=temp_x, y=y, id=current_cell)
-                while row_stack:
+                while row_stack and col_stack:
                     if row_stack[-1][2] == "source":
                         source_item = row_stack[-1][:2]
                         target_item = col_stack[-1][:2]
@@ -276,7 +290,8 @@ def get_islands(world):
                         del col_stack[-1]
                 if not col_stack:
                     islands.append((sources, targets))
-                    matching_lst = []
+                    sources = []
+                    targets = []
                     if num_matches == max_num_matches:
                         break
   
@@ -414,7 +429,7 @@ def execute_L_move(source: tuple, target: tuple, world: World):
         # world.print_world()
 
 def execute_boundary_L_move(source: Block, target: Block, world: World):
-    # raise NotImplementedError
+    raise NotImplementedError
     first_chain = []
     second_chain = []
     top_block = world.configuration.get_block_p(source)
@@ -483,3 +498,48 @@ def execute_boundary_L_move(source: Block, target: Block, world: World):
 
         #for debugging
         # world.print_world()
+
+def calc_seq_move_num(world: World, start: tuple, target: tuple):
+    if start[0] < target[0]: # right flow
+        move_num = 0
+        prev_location = start
+        for row in reversed(range(target[1], start[1])):
+            try:
+                highest_block = world.get_highest_block_row(row)
+                highest_block = (highest_block[0]+1, highest_block[1])
+            except:
+                highest_block = (prev_location[0]+1, 0)
+            move_num += chebyshev(prev_location, highest_block)
+            prev_location = highest_block
+    elif start[0] > target[0]: # left flow either fill left column or empty bottom row
+        move_num = 0
+        prev_location = start
+        for row in range(start[1]+1, target[1]+1):
+            try:
+                highest_block = world.get_highest_block_row(row)
+                highest_block = (highest_block[0]+1, highest_block[1])
+            except:
+                highest_block = (0, prev_location[1]+1)
+            move_num += chebyshev(prev_location, highest_block)
+            prev_location = highest_block
+
+    else: # impossible
+        raise ValueError(f"Trying to fill or empty the same column. That should be impossible. From {start} to {target}")
+
+    return move_num
+
+def sequential_transform(world: World):
+    sources = [block.p for block in world.configuration.blocks if block and block.status == "source"]
+    targets = [block.p for block in world.target_list]
+
+    sources = sorted(sources, key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
+    targets = sorted(targets, key= lambda pos: (pos[0] + pos[1], -pos[1]))
+    move_num = 0
+
+    for ind, source in enumerate(sources):
+        target = targets[ind]
+        move_num += calc_seq_move_num(world, source, target)
+        world.move_sequentially(source, target)
+        # world.print_world(
+
+    return world, move_num

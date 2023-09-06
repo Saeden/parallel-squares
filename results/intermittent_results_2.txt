@@ -1,0 +1,39 @@
+Tested 100 cases, with 10 blocks for the start and target config.
+Out of these 100 cases 0 gave an error during monotone matching reconfiguration
+Out of these 100 cases 0 gave an error during sequential reconfiguration
+The average number of moves for each case during monotone matching was 6.51
+The number of moves for each case were: [2, 4, 18, 4, 3, 11, 0, 13, 0, 8, 13, 0, 4, 7, 15, 13, 0, 9, 0, 0, 10, 0, 8, 4, 0, 2, 6, 0, 18, 8, 5, 0, 7, 7, 0, 9, 7, 5, 8, 7, 1, 14, 0, 9, 6, 12, 18, 0, 5, 10, 1, 1, 6, 5, 7, 13, 7, 17, 7, 4, 10, 7, 12, 11, 18, 20, 7, 13, 4, 9, 0, 2, 10, 4, 6, 0, 0, 8, 0, 0, 0, 16, 6, 6, 14, 5, 10, 6, 4, 0, 0, 12, 2, 18, 4, 13, 0, 0, 7, 9]
+The average number of moves for each case during sequential reconf was 6.47
+The number of moves for each case were: [2, 4, 17, 4, 3, 11, 0, 13, 0, 9, 13, 0, 4, 6, 14, 12, 0, 9, 0, 0, 11, 0, 8, 5, 0, 2, 6, 0, 18, 8, 5, 0, 7, 7, 0, 8, 7, 5, 8, 7, 1, 14, 0, 9, 7, 12, 18, 0, 6, 10, 1, 1, 6, 6, 7, 13, 7, 15, 7, 4, 10, 7, 12, 11, 18, 19, 7, 13, 4, 9, 0, 2, 10, 5, 6, 0, 0, 8, 0, 0, 0, 15, 6, 6, 14, 5, 10, 6, 5, 0, 0, 11, 2, 18, 4, 13, 0, 0, 6, 8]
+
+
+
+
+Tested 100 cases, with 25 blocks for the start and target config.
+Out of these 100 cases 0 gave an error during monotone matching reconfiguration
+Out of these 100 cases 0 gave an error during sequential reconfiguration
+The average number of moves for each case during monotone matching was 42.32
+The number of moves for each case were: [62, 77, 175, 76, 16, 46, 7, 28, 59, 75, 49, 15, 8, 0, 85, 16, 61, 122, 12, 49, 10, 0, 19, 19, 7, 38, 46, 0, 101, 55, 17, 162, 71, 146, 0, 141, 24, 39, 51, 30, 79, 133, 10, 57, 16, 39, 0, 105, 8, 44, 17, 43, 0, 0, 43, 35, 5, 167, 35, 43, 8, 6, 169, 14, 33, 26, 54, 44, 4, 52, 45, 18, 46, 15, 12, 13, 1, 15, 71, 16, 91, 44, 62, 0, 53, 18, 36, 44, 14, 58, 49, 45, 14, 8, 12, 17, 36, 34, 21, 21]
+The average number of moves for each case during sequential reconf was 45.42
+The number of moves for each case were: [69, 80, 162, 66, 23, 64, 13, 28, 69, 78, 52, 17, 15, 0, 77, 22, 62, 117, 15, 49, 10, 0, 27, 25, 9, 47, 44, 0, 90, 63, 25, 156, 76, 126, 0, 130, 34, 45, 62, 41, 81, 125, 12, 71, 19, 44, 0, 103, 16, 51, 21, 50, 0, 0, 44, 52, 8, 154, 40, 53, 10, 9, 153, 13, 39, 33, 63, 60, 12, 55, 51, 21, 50, 16, 21, 17, 1, 16, 80, 22, 94, 55, 59, 0, 61, 20, 48, 47, 14, 67, 47, 54, 20, 14, 12, 26, 39, 45, 23, 23]
+
+
+
+
+Tested 100 cases, with 50 blocks for the start and target config.
+Out of these 100 cases 0 gave an error during monotone matching reconfiguration
+Out of these 100 cases 0 gave an error during sequential reconfiguration
+The average number of moves for each case during monotone matching was 169.33
+The number of moves for each case were: [85, 264, 401, 64, 183, 333, 23, 0, 44, 25, 129, 46, 100, 14, 149, 170, 327, 4, 218, 481, 292, 416, 18, 489, 238, 72, 203, 278, 310, 155, 9, 846, 163, 65, 182, 22, 93, 167, 30, 434, 16, 28, 132, 466, 81, 132, 125, 40, 97, 113, 324, 58, 60, 46, 28, 113, 225, 142, 68, 69, 112, 44, 30, 44, 770, 30, 127, 33, 106, 350, 0, 97, 213, 10, 207, 710, 6, 10, 64, 69, 48, 397, 234, 91, 98, 130, 500, 57, 29, 124, 115, 407, 75, 690, 104, 40, 16, 557, 0, 284]
+The average number of moves for each case during sequential reconf was 197.6
+The number of moves for each case were: [139, 275, 453, 97, 194, 337, 33, 0, 57, 36, 199, 80, 180, 35, 203, 223, 351, 8, 247, 488, 328, 458, 36, 539, 247, 102, 247, 344, 300, 212, 20, 802, 208, 101, 247, 29, 143, 208, 30, 468, 45, 47, 184, 479, 137, 174, 182, 62, 143, 181, 390, 81, 89, 46, 46, 143, 244, 187, 118, 106, 146, 50, 40, 87, 705, 47, 208, 66, 129, 392, 0, 137, 291, 21, 260, 673, 22, 25, 99, 104, 83, 425, 265, 129, 130, 172, 531, 71, 35, 190, 166, 387, 121, 616, 134, 60, 34, 537, 0, 384]
+
+
+
+Tested 100 cases, with 100 blocks for the start and target config.
+Out of these 100 cases 0 gave an error during monotone matching reconfiguration
+Out of these 100 cases 0 gave an error during sequential reconfiguration
+The average number of moves for each case during monotone matching was 459.73
+The number of moves for each case were: [647, 355, 1207, 0, 93, 3282, 1423, 285, 611, 32, 639, 127, 287, 83, 426, 133, 131, 36, 262, 381, 455, 572, 273, 31, 26, 58, 2394, 790, 793, 134, 58, 1532, 0, 231, 423, 269, 489, 1145, 85, 36, 43, 953, 148, 870, 66, 252, 587, 65, 50, 258, 65, 182, 2584, 122, 137, 909, 519, 751, 586, 122, 296, 993, 1388, 61, 354, 55, 662, 268, 9, 418, 614, 125, 449, 47, 169, 11, 108, 153, 173, 808, 222, 536, 924, 8, 527, 18, 1301, 748, 150, 1041, 367, 269, 22, 113, 1705, 437, 124, 545, 131, 121]
+The average number of moves for each case during sequential reconf was 658.15
+The number of moves for each case were: [1023, 610, 1518, 0, 199, 3167, 1799, 459, 833, 32, 950, 257, 482, 211, 722, 322, 280, 55, 457, 425, 781, 884, 537, 145, 26, 181, 2457, 1100, 1162, 299, 128, 1908, 0, 376, 775, 503, 820, 1432, 206, 91, 131, 1454, 149, 1262, 119, 509, 928, 107, 198, 546, 289, 333, 2536, 189, 274, 1259, 828, 1286, 762, 289, 556, 1363, 1731, 122, 663, 201, 1003, 504, 24, 597, 824, 289, 838, 143, 267, 38, 238, 291, 312, 1094, 507, 853, 1225, 14, 692, 48, 1704, 1110, 365, 1331, 713, 432, 83, 271, 2082, 612, 294, 784, 315, 222]

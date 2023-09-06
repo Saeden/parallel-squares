@@ -2,25 +2,30 @@ import shapes.shapes as shapes
 from model.world import *
 from model.configuration import Configuration
 from model.util import deserialize
-from algorithms.block_matching import matching_monotone
+from algorithms.block_matching import matching_monotone, sequential_transform
 from graph_tool.all import *
 from graphs.matched import MatchGraph
 import random
+from copy import deepcopy
 
 
 def get_monotone_results():
     number_of_blocks = [10,25]#,50]#,100,200]
-    number_of_blocks = [25]
+    number_of_blocks = [200]
 
-    seed_list = range(10)
+    seed_list = range(100)
 #    seed_list = [1]
 
-    num_err_configs = 0
-    error_configs = []
+    num_err_configs_monotone = 0
+    error_configs_monotone = []
+
+    num_err_configs_seq = 0
+    error_configs_seq = []
 
     for block_num in number_of_blocks:
-        moves_per_solve = []
-        correct_seeds = []
+        moves_per_solve_monotone = []
+        moves_per_solve_seq = []
+
         #print(f"Testing shapes with {block_num} blocks:")
         for seed in seed_list:
             random.seed(seed)
@@ -28,36 +33,58 @@ def get_monotone_results():
             start: Configuration = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
             target: Configuration = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
 
-            world = create_world(start, target)
+            world_monotone = create_world(start, target)
 
-            # if check_boundary(world):
-            #     correct_seeds.append(seed)
-            #     world.print_world()
-            #     continue
 
+            # start_seq: Configuration = deepcopy(start)
+            start_seq = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
+            # target_seq: Configuration = deepcopy(target)
+            target_seq = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed) 
+            world_seq = create_world(start_seq, target_seq)
             try:
                 print(f"\nRun the monotone algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
-                world.print_world()
+                world_monotone.print_world()
                 print()
-                world, move_num = matching_monotone(world)
-                moves_per_solve.append(move_num)
+                world_monotone, move_num = matching_monotone(world_monotone)
+                moves_per_solve_monotone.append(move_num)
                 print("The finished shape looks like this.")
-                world.print_world()
+                world_monotone.print_world()
                 print()
             except Exception as e:
-                print("An error occured during reconfiguration...")
+                print("An error occured in the monotone alg during reconfiguration...")
                 print(e)
                 print("At the time of error the shape looked like this:")
-                world.print_world()
+                world_monotone.print_world()
                 print()
-                num_err_configs += 1
-                error_configs.append(f"Type: {block_num}, Seed: {seed}")
+                num_err_configs_monotone += 1
+                error_configs_monotone.append(f"Type: {block_num}, Seed: {seed}")
+                
+            try:
+                print(f"\nRun the sequential algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
+                world_seq.print_world()
+                print()
+                world_seq, move_num = sequential_transform(world_seq)
+                moves_per_solve_seq.append(move_num)
+                print("The finished shape looks like this.")
+                world_seq.print_world()
+                print()
+            except Exception as e:
+                print("An error occured during the sequential reconfiguration...")
+                print(e)
+                print("At the time of error the shape looked like this:")
+                world_seq.print_world()
+                print()
+                num_err_configs_seq += 1
+                error_configs_seq.append(f"Type: {block_num}, Seed: {seed}") 
         
         print("\n\n\n")
         print(f"Tested {len(seed_list)} cases, with {block_num} blocks for the start and target config.")
-        print(f"Out of these {len(seed_list)} cases {num_err_configs} gave an error during reconfiguration")
-        print(f"The average number of moves for each case was {sum(moves_per_solve)/len(moves_per_solve)}")
-        print(f"The number of moves for each case were: {moves_per_solve}")
+        print(f"Out of these {len(seed_list)} cases {num_err_configs_monotone} gave an error during monotone matching reconfiguration")
+        print(f"Out of these {len(seed_list)} cases {num_err_configs_seq} gave an error during sequential reconfiguration")
+        print(f"The average number of moves for each case during monotone matching was {sum(moves_per_solve_monotone)/len(moves_per_solve_monotone)}")
+        print(f"The number of moves for each case were: {moves_per_solve_monotone}")
+        print(f"The average number of moves for each case during sequential reconf was {sum(moves_per_solve_seq)/len(moves_per_solve_seq)}")
+        print(f"The number of moves for each case were: {moves_per_solve_seq}")
 
         num_err_configs = 0
         moves_per_solve = []
