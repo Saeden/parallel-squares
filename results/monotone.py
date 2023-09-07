@@ -6,14 +6,12 @@ from algorithms.block_matching import matching_monotone, sequential_transform
 from graph_tool.all import *
 from graphs.matched import MatchGraph
 import random
-from copy import deepcopy
-
 
 def get_monotone_results():
-    number_of_blocks = [10,25]#,50]#,100,200]
-    number_of_blocks = [200]
+    # number_of_blocks = [10,25,50,100,200]
+    number_of_blocks = [500]
 
-    seed_list = range(100)
+    seed_list = range(1)
 #    seed_list = [1]
 
     num_err_configs_monotone = 0
@@ -26,56 +24,26 @@ def get_monotone_results():
         moves_per_solve_monotone = []
         moves_per_solve_seq = []
 
-        #print(f"Testing shapes with {block_num} blocks:")
         for seed in seed_list:
-            random.seed(seed)
-            max_x = int(block_num/2)
-            start: Configuration = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
-            target: Configuration = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
+            start_path = f"results/shapes/{block_num}/shape_{seed+1}_size_{block_num}_start.json"
+            target_path = f"results/shapes/{block_num}/shape_{seed+1}_size_{block_num}_target.json"
 
-            world_monotone = create_world(start, target)
-
-
-            # start_seq: Configuration = deepcopy(start)
-            start_seq = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed)
-            # target_seq: Configuration = deepcopy(target)
-            target_seq = shapes.xy_monotone_new(blocks=block_num,x=random.randint(2, max_x), seed=seed) 
-            world_seq = create_world(start_seq, target_seq)
-            try:
-                print(f"\nRun the monotone algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
-                world_monotone.print_world()
-                print()
-                world_monotone, move_num = matching_monotone(world_monotone)
-                moves_per_solve_monotone.append(move_num)
-                print("The finished shape looks like this.")
-                world_monotone.print_world()
-                print()
-            except Exception as e:
-                print("An error occured in the monotone alg during reconfiguration...")
-                print(e)
-                print("At the time of error the shape looked like this:")
-                world_monotone.print_world()
-                print()
+            monotone_move_num, correct, error = get_monotone_match_result(start_path, target_path, seed, block_num)
+            if error or not correct:
                 num_err_configs_monotone += 1
-                error_configs_monotone.append(f"Type: {block_num}, Seed: {seed}")
+                error_configs_monotone.append(f"Type: {block_num}, Seed: {seed}, Correct:{correct}, Error: {error}")
+                error = None
+            else:
+                moves_per_solve_monotone.append(monotone_move_num)
                 
-            try:
-                print(f"\nRun the sequential algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
-                world_seq.print_world()
-                print()
-                world_seq, move_num = sequential_transform(world_seq)
-                moves_per_solve_seq.append(move_num)
-                print("The finished shape looks like this.")
-                world_seq.print_world()
-                print()
-            except Exception as e:
-                print("An error occured during the sequential reconfiguration...")
-                print(e)
-                print("At the time of error the shape looked like this:")
-                world_seq.print_world()
-                print()
+            sequential_move_num, correct, error = get_sequential_result(start_path,target_path,seed, block_num)
+            if error or not correct:
                 num_err_configs_seq += 1
-                error_configs_seq.append(f"Type: {block_num}, Seed: {seed}") 
+                error_configs_seq.append(f"Type: {block_num}, Seed: {seed}, Correct: {correct}, Error: {error}")
+                error = None
+            else:
+                moves_per_solve_seq.append(sequential_move_num)
+                
         
         print("\n\n\n")
         print(f"Tested {len(seed_list)} cases, with {block_num} blocks for the start and target config.")
@@ -119,6 +87,73 @@ def check_boundary(world: World) -> bool:
         return False
     else:
         return True
+
+def check_configuration(world: World, target: Configuration) -> bool:
+    for block in target.blocks:
+        if block and not world.configuration.get_block_p(block.p):
+            return False
+
+    return True
+
+def get_monotone_match_result(start_path:str, target_path:str, seed:int, block_num:int):
+    start: Configuration = deserialize(start_path)
+    target: Configuration = deserialize(target_path)
+
+    world_monotone = create_world(start, target)
+    move_num = 0
+    try:
+        print(f"\nRun the monotone algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
+        world_monotone.print_world()
+        print()
+        world_monotone, move_num = matching_monotone(world_monotone)
+        print("The finished shape looks like this.")
+        world_monotone.print_world()
+        print()
+        error = None
+        correct = check_configuration(world=world_monotone, target=deserialize(target_path))
+
+    except Exception as e:
+        print("An error occured in the monotone alg during reconfiguration...")
+        print(e)
+        print("At the time of error the shape looked like this:")
+        world_monotone.print_world()
+        print()
+        correct = False
+        error = e
+
+    
+
+    return move_num, correct, error
+ 
+
+def get_sequential_result(start_path, target_path, seed, block_num):
+    start_seq = deserialize(start_path)
+    # target_seq: Configuration = deepcopy(target)
+    target_seq = deserialize(target_path)
+    world_seq = create_world(start_seq, target_seq)
+
+    move_num = 0           
+    try:
+        print(f"\nRun the sequential algorithm for shape {seed+1} of size {block_num}:\nThe shape currently looks like this...")
+        world_seq.print_world()
+        print()
+        world_seq, move_num = sequential_transform(world_seq)
+        print("The finished shape looks like this.")
+        world_seq.print_world()
+        print()
+        error = None
+        correct = check_configuration(world=world_seq, target=deserialize(target_path))
+    except Exception as e:
+        print("An error occured during the sequential reconfiguration...")
+        print(e)
+        print("At the time of error the shape looked like this:")
+        world_seq.print_world()
+        print()
+        correct=False
+        error=e
+       
+
+    return move_num, correct, error
 
 def create_world(start: Configuration, target: Configuration) -> World:
     max_x: int = max((start.boundary[0], target.boundary[0]))

@@ -2,6 +2,7 @@ import random
 from model.world import *
 from model.block import Block
 
+
 DEBUG = False
 
 def xy_monotone(max_x = 10, max_y = 10, max_vol = 50, DEBUG = DEBUG, seed = None):

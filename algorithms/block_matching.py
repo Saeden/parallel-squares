@@ -48,7 +48,8 @@ def matching_monotone(world: World) -> World:
                 execute_L_move(source=source, target=target, world=world)
                 
     # empty boundary while preserving monotonicity
-    world, empty_move_num = empty_boundary(world)
+    # world, empty_move_num = empty_boundary(world)
+    world, empty_move_num = sequential_transform(world)
     print(f"Emptying the excess boundary cost {empty_move_num} moves.")
     world.print_world()
     move_num += empty_move_num
@@ -91,7 +92,7 @@ def fill_boundary(world: World) -> (World, int):
     while len(row_sources) < len(row_targets):
         column_ind = row_targets[0][1][0] - ind
         block_loc = world.get_highest_block_col(column_ind)
-        while block_loc[1] > 0:
+        while block_loc[1] > 0 and len(row_sources) < len(row_targets):
             row_sources.append(block_loc)
             block_loc = (block_loc[0], block_loc[1]-1)
 
@@ -103,8 +104,9 @@ def fill_boundary(world: World) -> (World, int):
     while len(col_sources) < len(col_targets):
         row_ind = col_targets[0][1][1] - ind
         block_loc = world.get_highest_block_row(row_ind)
-        while block_loc[0] > 0:
-            col_sources.append(block_loc)
+        while block_loc[0] > 0 and len(col_sources) < len(col_targets):
+            if block_loc not in row_sources:
+                col_sources.append(block_loc)
             block_loc = (block_loc[0]-1, block_loc[1])
 
         ind += 1
@@ -184,6 +186,9 @@ def empty_boundary(world: World) -> World:
             cell_loc = (cell_loc[0], cell_loc[1]+1)
 
         ind += 1
+
+
+    total_source_blocks
 
     move_num = 0
     for ind, source in enumerate(row_sources):
