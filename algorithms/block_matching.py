@@ -8,9 +8,8 @@ def matching_monotone(world: World) -> World:
     move_num = 0
     # Fill the boundary while preserving monotonicity
     world, fill_move_num = fill_boundary(world)
-    print(f"Filling the boundary cost {fill_move_num} moves.")
-    world.print_world()
-    move_num += fill_move_num
+    # print(f"Filling the boundary cost {fill_move_num} moves.")
+    # world.print_world()
     
     
 
@@ -32,30 +31,32 @@ def matching_monotone(world: World) -> World:
             target = matched_blocks[1]
             if is_convex_trans(source, target):
                 move_num += 1
-                print(f"This matching is close enough for a single convex transition. Executing now.")
-                print(f"The total number of moves is {move_num}.")
+                # print(f"This matching is close enough for a single convex transition. Executing now.")
+                # print(f"The number of moves is {move_num}.")
                 source_block = world.configuration.get_block_p(source)
                 execute_convex_trans(source=source_block, to=target, world=world)
             elif 0 in source:
                 move_num += 3
-                print(f"Executing a boundary L-shaped move. The total number of moves is {move_num}")
+                # print(f"Executing a boundary L-shaped move. The total number of moves is {move_num}")
                 execute_boundary_L_move(source=source, target=target, world=world)
             elif 0 in target:
                 raise ValueError("The boundary should be filled but it is not.")
             else:
                 move_num += 2
-                print(f"Executing an L-shaped move. The total number of moves is {move_num}")
+                # print(f"Executing an L-shaped move. The total number of moves is {move_num}")
                 execute_L_move(source=source, target=target, world=world)
                 
     # empty boundary while preserving monotonicity
     # world, empty_move_num = empty_boundary(world)
     world, empty_move_num = sequential_transform(world)
-    print(f"Emptying the excess boundary cost {empty_move_num} moves.")
-    world.print_world()
+    # print(f"Emptying the excess boundary cost {empty_move_num} moves.")
+    # world.print_world()
+    all_move_nums = (fill_move_num, move_num, empty_move_num)
     move_num += empty_move_num
-    print(f"The total number of moves is {move_num}.")
+    # print(f"The total number of moves is {move_num}.")
+    move_num += fill_move_num
 
-    return world, move_num
+    return world, move_num, all_move_nums
 
 
 def is_convex_trans(source: Block, target: Block) -> bool:
@@ -345,7 +346,7 @@ def make_matching_old(world: World) -> list[list]:
                     if row_stack[-1][2] == "source":
                         source_item = row_stack[-1][:2]
                         target_item = col_stack[-1][:2]
-                        print(f"Source block; pos: {source_item} | Target block; pos: {target_item}")
+                        # print(f"Source block; pos: {source_item} | Target block; pos: {target_item}")
                         matching_lst.append((source_item, target_item, "left", num_matches))
                         num_matches += 1
                         del row_stack[-1]
@@ -353,7 +354,7 @@ def make_matching_old(world: World) -> list[list]:
                     elif row_stack[-1][2] == "target":
                         source_item = col_stack[-1][:2]
                         target_item = row_stack[-1][:2]
-                        print(f"Source block; pos: {source_item} | Target block; pos: {target_item}")
+                        # print(f"Source block; pos: {source_item} | Target block; pos: {target_item}")
                         matching_lst.append((source_item, target_item, "right", num_matches))
                         num_matches += 1
                         del row_stack[-1]

@@ -30,9 +30,9 @@ def serialize(config: Configuration, num_blocks: int, seed: int, start: bool):
 
 
 def generate_XYmonotone_files():
-    number_of_blocks = [500]
+    number_of_blocks = [500, 1000]
 
-    seed_list = range(1)
+    seed_list = range(200)
 
     for block_num in number_of_blocks:
         for seed in seed_list:
