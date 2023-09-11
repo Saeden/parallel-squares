@@ -41,7 +41,7 @@ def get_monotone_results():
         time_per_solve_seq = []
 
 
-        print(f"Starting reconfiguration of shapes of size {block_num}")
+        print(f"\n\n\nStarting reconfiguration of shapes of size {block_num}")
 
         for seed in seed_list:
             start_path = f"results/shapes/{block_num}/shape_{seed+1}_size_{block_num}_start.json"
@@ -73,7 +73,7 @@ def get_monotone_results():
         average_move_seq = sum(moves_per_solve_seq)/len(moves_per_solve_seq)
         average_time_seq = sum(time_per_solve_seq)/len(time_per_solve_seq)
 
-        print("\n\n\n")
+        # print("\n\n\n")
         print(f"Tested {len(seed_list)} cases, with {block_num} blocks for the start and target config.")
         print(f"Out of these {len(seed_list)} cases {num_err_configs_monotone} gave an error during monotone matching reconfiguration")
         print(f"Out of these {len(seed_list)} cases {num_err_configs_seq} gave an error during sequential reconfiguration")
@@ -86,8 +86,8 @@ def get_monotone_results():
         # print(f"The time for each case was: {time_per_solve_monotone}\n")
         print(f"The average number of moves for each case during sequential reconf was {average_move_seq}")
         # print(f"The number of moves for each case were: {moves_per_solve_seq}")
-        print(f"The average time for each case during sequential reconf was {average_time_seq}\n\n")
-        print(f"The total time to complete the sequential reconf was: {sum(time_per_solve_seq)}")
+        print(f"The average time for each case during sequential reconf was {average_time_seq}")
+        print(f"The total time to complete the sequential reconf was: {sum(time_per_solve_seq)}\n\n")
         # print(f"The time for each case was: {time_per_solve_seq}")
 
 
