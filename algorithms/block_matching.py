@@ -218,10 +218,10 @@ def make_matching(islands, world) -> list:
         sources = [source for source in island[0] if source[0] != 0 and source[1] != 0]
         if first_source_x < first_target_x: # right flow:
             sources = sorted(sources, key= lambda pos: (pos[0] + pos[1],  pos[1]), reverse=True)
-            targets = sorted(island[1], key= lambda pos: (pos[1], pos[0]))
+            targets = sorted(island[1], key= lambda pos: ((pos[1]+ pos[0]), pos[0]))
         else:
-            sources = sorted(sources, key= lambda pos: (pos[0] + pos[1],  -pos[1]), reverse=True)
-            targets = sorted(island[1])
+            sources = sorted(sources, key= lambda pos: (pos[0] + pos[1],  pos[0]), reverse=True)
+            targets = sorted(island[1], key= lambda pos: (pos[0]+pos[1], pos[1]))
 
         for ind, source in enumerate(sources):
             matching_lst.append((source, targets[ind], None, ind))

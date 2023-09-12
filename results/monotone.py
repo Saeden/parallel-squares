@@ -11,8 +11,8 @@ import os
 import json
 
 def get_monotone_results():
-    number_of_blocks = [10,25,50,100,200,500,1000]
-    # number_of_blocks = [10]
+    # number_of_blocks = [10,25,50,100,200,500,1000]
+    number_of_blocks = [50]
 
     seed_list = range(1000)
 #    seed_list = [1]
@@ -92,13 +92,14 @@ def get_monotone_results():
 
 
         directory = f"results/json_results"
-        file_name = f"results_size_{block_num}_shapes_{len(seed_list)}.json"
+        file_name = f"results_size_{block_num}_shapes_{len(seed_list)}_v2.json"
 
         if not os.path.exists(directory):
             os.makedirs(directory)
 
+
         path = os.path.join(directory, file_name)
-            
+
         obj = { 
             '_version': 1,
             'avg_moves_monotone': average_move_monotone,
