@@ -12,7 +12,7 @@ import json
 
 def get_monotone_results():
     # number_of_blocks = [10,25,50,100,200,500,1000]
-    number_of_blocks = [50]
+    number_of_blocks = [500, 1000]
 
     seed_list = range(1000)
 #    seed_list = [1]
@@ -23,9 +23,9 @@ def get_monotone_results():
         if block_num == 200:
             seed_list = range(100)
         if block_num == 500:
-            seed_list = range(50)
-        if block_num == 1000:
             seed_list = range(10)
+        if block_num == 1000:
+            seed_list = range(1)
 
         num_err_configs_monotone = 0
         error_configs_monotone = []
@@ -92,7 +92,7 @@ def get_monotone_results():
 
 
         directory = f"results/json_results"
-        file_name = f"results_size_{block_num}_shapes_{len(seed_list)}_v2.json"
+        file_name = f"results_size_{block_num}_shapes_{len(seed_list)}.json"
 
         if not os.path.exists(directory):
             os.makedirs(directory)

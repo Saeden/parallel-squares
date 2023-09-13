@@ -12,7 +12,7 @@ import random
 
 DEBUG = True
 
-def main():
+def main3():
     # # # hard coded specific example 2 | 3 islands
     # start: Configuration = shapes.specific_example2(start=True)
     # target: Configuration = shapes.specific_example2(start=False)
@@ -22,7 +22,7 @@ def main():
     # world, move_num = matching_monotone(world)
     get_monotone_results()
 
-def main3():
+def main():
     start: Configuration = deserialize(path="gridsize_10x10_filledpercentage_70_id_8.json", dim=10)
     target: Configuration = deserialize(path="gridsize_10x10_filledpercentage_70_id_9.json", dim=10)
 
