@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import pandas as pd
 import numpy as np
 import json
@@ -37,7 +38,7 @@ for size in sizes:
         parallel_avgs.append(obj['avg_moves_monotone'])
         sequential_avgs.append(obj['avg_moves_seq']) 
         
-        error_percentage = (len(obj['errors_monotone'])/shapes_num)
+        error_percentage = (len(obj['errors_monotone'])/shapes_num)*100
         error_percentages.append(error_percentage) 
 
         fill_nums = [fill for fill, _, _ in obj['all_move_nums']]
@@ -73,6 +74,8 @@ ax.set_xlabel('Number of blocks in the configuration')
 
 # Set the y-axis label
 ax.set_ylabel('Average number of moves')
+ax.set_yscale('log')
+
 
 # Set the chart title
 ax.set_title('Average number of moves for both algorithms')
@@ -94,9 +97,9 @@ bar_width = 0.25
 
 # Create the double bar chart
 fig, ax = plt.subplots()
-fill_bars = ax.bar(x - bar_width, fill_avgs, bar_width, label='Fill Boundary')
-lshaped_bars = ax.bar(x, lshaped_avgs, bar_width, label='L-shaped moves')
-empty_bars = ax.bar(x + bar_width, empty_avgs, bar_width, label='Empty Boundary')
+fill_bars = ax.bar(x - bar_width, fill_avgs, bar_width, label='Stage 1 (Fill)')
+lshaped_bars = ax.bar(x, lshaped_avgs, bar_width, label='Stage 2 (L-move)')
+empty_bars = ax.bar(x + bar_width, empty_avgs, bar_width, label='Stage 3 (Empty)')
 
 # Set the x-axis labels
 ax.set_xticks(x)
@@ -105,6 +108,8 @@ ax.set_xlabel('Number of blocks in the configuration')
 
 # Set the y-axis label
 ax.set_ylabel('Average number of moves')
+# ax.set_yscale('log')
+
 
 # Set the chart title
 ax.set_title('Average number of moves for the different stages per number of blocks')
@@ -137,8 +142,11 @@ ax.set_xlabel('Number of blocks in the configuration')
 # Set the y-axis label
 ax.set_ylabel('Error percentage')
 
+# Format the y-axis ticks as percentages
+ax.yaxis.set_major_formatter(mtick.PercentFormatter())
+
 # Set the chart title
-ax.set_title('Percentage of configurations')
+ax.set_title('Percentage of configurations that fail to reconfigure.')
 
 # Add a legend
 ax.legend()

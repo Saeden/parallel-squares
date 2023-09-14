@@ -1,0 +1,1 @@
+{"_version": 1, "avg_moves_monotone": 47205.0, "avg_time_monotone": 73044.42785835266, "avg_moves_seq": 74056.0, "avg_time_seq": 95.4984381198883, "total_move_nums_monotone": [47205], "all_move_nums": [[33, 276, 46896]], "times_monotone": [73044.42785835266], "errors_monotone": [], "total_move_nums_seq": [74056], "times_seq": [95.4984381198883], "errors_seq": []}
